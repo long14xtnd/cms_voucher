@@ -1,0 +1,51 @@
+.addMaterial {
+    padding-left: 40px;
+    .add-material-input {
+        display: flex;
+        justify-content: flex-start;
+        align-content: center;
+        margin-top: 10px;
+    } 
+
+    .card-content-title {
+        font-weight: 600;
+    }
+
+    .body-page {
+        margin-top: 20px;
+    }
+
+    .attention-input {
+        color: red;
+    }
+
+    .btn-save-material {
+        margin-top: 20px;
+    }
+
+    .btn-action {
+        float: right;
+    }
+
+    .err {
+        color: red;
+    }
+
+    .err_nameMarterial {
+        margin-top: 7px;
+    }
+
+}
+
+.modal-edit-material {
+    background-color: white;
+    padding: 15px;
+}
+
+.modal-header {
+    padding-bottom: 0px;
+}
+
+.modal-title {
+    font-size: 26px;
+}
