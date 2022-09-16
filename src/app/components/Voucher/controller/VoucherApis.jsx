@@ -3,7 +3,7 @@ import axios from "../../../../axios";
 const createVoucherSerialController = (header, data) => {
   return axios({
     url: "/addvoucherserial/add",
-    method: "post",
+    method: "POST",
     headers: header,
     data: data,
   });

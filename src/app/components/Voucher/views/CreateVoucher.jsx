@@ -31,38 +31,37 @@ function CreateVoucher(props) {
   const [data, setData] = useState({
     voucherSerialName: "",
     voucherType: null,
-    voucherValue: "",
+    voucherValue: null,
     title: "",
     shortName: "",
     content: "",
     desc: "",
-    image: "",
-    discountForm: null,
-    vouchcerServiceApplication: null,
+    image: "image",
+    discountForm: "",
+    vouchcerServiceApplication: 1,
     discountType: null,
     packages: [],
-    startAt: "",
-    endAt: "",
-    typeArea: null,
+    startAt: "2022-03-20",
+    endAt: "2022-05-24",
+    typeArea: 2,
     provinceCode: [],
-    ishared: null,
+    ishared: 1,
     usage_limit: "",
     personalUsageLimit: "",
-    status: null,
-    paymentMethod: null,
-    packagesCondition: null,
-    minValueCodition: "",
-    fromDateCondition: "",
-    toDateCondition: "",
-    userType: null,
-    sexCondition: null,
-    fromAge: null,
-    toAge: null,
-    maxValue: "",
-    baseOn: null,
-    durationDayCondition: "",
+    status: 2,
+    paymentMethod: 1,
+    minValueCodition: null,
+    fromDateCondition: "2022-11-03",
+    toDateCondition: "2022-12-03",
+    userTypeCodition: 0,
+    sexCondition: 2,
+    fromAge: 14,
+    toAge: 30,
+    maxValue: null,
+    baseOnCondition: 1,
+    durationDayCondition: null,
     prefix: "",
-    typeCode: null,
+    typeCode: 3,
     manualCode: "",
     packageUserCondition: [],
   });
@@ -70,7 +69,7 @@ function CreateVoucher(props) {
     useState(true);
   const [isCheckedPaymentMethod, setCheckedPaymentMethod] = useState(true);
   let [isSinglePackage, setIsSinglePackage] = useState(false);
-  let [checkedTypeArea, setCheckedTypeArea] = useState(false);
+  let [checkedTypeArea, setCheckedTypeArea] = useState(true);
   let [showModal, setShowModal] = useState(false);
   let [titleNoti, setTitleNoti] = useState("");
   let [messageNoti, setMessageNoti] = useState("");
@@ -88,6 +87,38 @@ function CreateVoucher(props) {
   const [validationMsg, setValidationMsg] = useState("");
 
   //========================CONFIG DATA========================
+  function formatDate(date) {
+    var d = new Date(date),
+      month = "" + (d.getMonth() + 1),
+      day = "" + d.getDate(),
+      year = d.getFullYear();
+
+    if (month.length < 2) month = "0" + month;
+    if (day.length < 2) day = "0" + day;
+
+    return [year, month, day].join("-");
+  }
+  const selectDate = (selectedDate) => {
+    setData({
+      ...data,
+      startAt: formatDate(selectedDate[0]),
+      endAt: formatDate(selectedDate[1]),
+    });
+  };
+  const selectUserTypeCond = (selectedUserTypeCond) => {
+    setData({
+      ...data,
+      userTypeCodition: parseInt(selectedUserTypeCond.target.value),
+    });
+  };
+  const setPrefixCodeUppercase = () => {
+    var prefix = document.getElementById("prefix");
+    prefix.value = prefix.value.toUpperCase();
+  };
+  const setManualCodeUppercase = () => {
+    var manualCode = document.getElementById("manualCode");
+    manualCode.value = manualCode.value.toUpperCase();
+  };
   const closeModalNoti = () => {
     setShowModal((showModal = false));
   };
@@ -216,48 +247,47 @@ function CreateVoucher(props) {
     setCheckedServiceApplication(false);
     setData({
       ...data,
-      vouchcerServiceApplication: selectServiceApplication.target.value,
+      vouchcerServiceApplication: parseInt(
+        selectServiceApplication.target.value
+      ),
     });
   };
   const selectPaymentMethod = (selectedPaymentMethod) => {
     setCheckedPaymentMethod(false);
     setData({
       ...data,
-      paymentMethod: selectedPaymentMethod.target.value,
+      paymentMethod: parseInt(selectedPaymentMethod.target.value),
     });
   };
   const selectStatus = (selectedStatus) => {
     setData({
       ...data,
-      status: selectedStatus.target.value,
+      status: parseInt(selectedStatus.target.value),
     });
   };
   const selectDiscountType = (selectedDiscountType) => {
     setData({
       ...data,
-      discountType: selectedDiscountType.target.value,
+      discountType: parseInt(selectedDiscountType.target.value),
     });
   };
   const selectTypeArea = (selectedTypeArea) => {
+    if (selectedTypeArea.target.value !== 0) {
+      setCheckedTypeArea(false);
+    } else {
+      setCheckedTypeArea(true);
+    }
+
     setData({
       ...data,
-      typeArea: selectedTypeArea.target.value,
+      typeArea: parseInt(selectedTypeArea.target.value),
     });
   };
-  const selectProvince = (selectedProvince) => {
-    if (selectedProvince.length === 1) {
-      setData({ ...data, provinceCode: [selectedProvince[0].value] });
-    } else if (selectedProvince.length > 1) {
-      let listSelectedProvinces = [];
-      selectedProvince.map(
-        (item) =>
-          (listSelectedProvinces = [...listSelectedProvinces, item.value])
-      );
-      setData({
-        ...data,
-        provinceCode: listSelectedProvinces,
-      });
-    }
+  const selectTypeCode = (selectedTypeCode) => {
+    setData({
+      ...data,
+      typeCode: parseInt(selectedTypeCode.target.value),
+    });
   };
   const axiosGetListPackageFromProvince = async (packageId) => {
     let result = [];
@@ -299,6 +329,7 @@ function CreateVoucher(props) {
       setIsSinglePackage((isSinglePackage = false));
       setData({ ...data, packages: [event[0].value] });
     } else if (event.length > 1) {
+      console.log(checkedTypeArea);
       setCheckedTypeArea((checkedTypeArea = true));
       openModalNoti(
         "Lỗi !",
@@ -315,7 +346,42 @@ function CreateVoucher(props) {
       });
     }
   };
-
+  const selectProvince = (selectedProvince) => {
+    if (selectedProvince.length === 1) {
+      setData({ ...data, provinceCode: [selectedProvince[0].value] });
+    } else if (selectedProvince.length > 1) {
+      let listSelectedProvinces = [];
+      selectedProvince.map(
+        (item) =>
+          (listSelectedProvinces = [...listSelectedProvinces, item.value])
+      );
+      setData({
+        ...data,
+        provinceCode: listSelectedProvinces,
+      });
+    }
+  };
+  const selectPackageUserCondition = (selectedPackageUserCondition) => {
+    if (selectedPackageUserCondition.length === 1) {
+      setData({
+        ...data,
+        packageUserCondition: [selectedPackageUserCondition[0].value],
+      });
+    } else if (selectedPackageUserCondition.length > 1) {
+      let listSelectedPackageUserConditions = [];
+      selectedPackageUserCondition.map(
+        (item) =>
+          (listSelectedPackageUserConditions = [
+            ...listSelectedPackageUserConditions,
+            item.value,
+          ])
+      );
+      setData({
+        ...data,
+        packageUserCondition: listSelectedPackageUserConditions,
+      });
+    }
+  };
   const voucherTypeHtml = () => {
     switch (a) {
       case 1:
@@ -361,22 +427,9 @@ function CreateVoucher(props) {
                       type="radio"
                       className="form-check-input"
                       name="ExampleRadio4"
-                      // value={(data.maxValue = 0)}
-                    />{" "}
-                    Không giới hạn
-                    <i className="input-helper"></i>
-                  </label>
-                </div>
-                <div className="form-check col-md-4">
-                  <label className="form-check-label">
-                    <input
-                      type="radio"
-                      className="form-check-input"
-                      name="ExampleRadio4"
                       checked
                     />{" "}
                     Dưới VNĐ
-                    <i className="input-helper"></i>
                   </label>
                 </div>
                 <div className="col-md-4">
@@ -447,7 +500,10 @@ function CreateVoucher(props) {
                 className="form-control"
                 placeholder="1"
                 onChange={(e) =>
-                  setData({ ...data, personalUsageLimit: e.target.value })
+                  setData({
+                    ...data,
+                    personalUsageLimit: e.target.value,
+                  })
                 }
                 value={data.personalUsageLimit}
               />
@@ -505,20 +561,6 @@ function CreateVoucher(props) {
                 isMulti
               />
             </div>
-            {/* <Form.Group className="col-md-4">
-              <label>Thêm ảnh cho chi tiết</label>
-              <div className="custom-file">
-                <Form.Control
-                  type="file"
-                  className="form-control visibility-hidden"
-                  id="customFileLang"
-                  lang="es"
-                />
-                <label className="custom-file-label" htmlFor="customFileLang">
-                  Upload image
-                </label>
-              </div>
-            </Form.Group> */}
           </>
         );
       default:
@@ -558,7 +600,8 @@ function CreateVoucher(props) {
                     className="form-check-input"
                     name="voucherCode"
                     id={`membershipRadios`}
-                    // value={(data.typeCode = 1)}
+                    value="1"
+                    onChange={selectTypeCode}
                   />{" "}
                   Tự động sinh mã
                   <i className="input-helper"></i>
@@ -573,16 +616,19 @@ function CreateVoucher(props) {
                     className="form-check-input"
                     name="voucherCode"
                     id="optionsRadios3"
-                    value="option3"
+                    value="2"
+                    onChange={selectTypeCode}
                   />
                   <i className="input-helper"></i>
                   Tự động sinh mã(tối đa 4 ký tự)
                 </label>
                 <input
                   type="text"
+                  id="prefix"
                   className="form-control col-md-2"
                   placeholder="100"
                   onChange={(e) => setData({ ...data, prefix: e.target.value })}
+                  onBlur={setPrefixCodeUppercase}
                   value={data.prefix}
                 />
                 <p className="text-danger">{validationMsg.prefix}</p>
@@ -596,6 +642,8 @@ function CreateVoucher(props) {
                     className="form-check-input"
                     name="voucherCode"
                     id={`membershipRadios`}
+                    value="3"
+                    onChange={selectTypeCode}
                   />{" "}
                   Nhập mã (8 ký tự)
                   <i className="input-helper"></i>
@@ -605,11 +653,13 @@ function CreateVoucher(props) {
                 </label>
                 <input
                   type="text"
+                  id="manualCode"
                   className="form-control col-md-2"
                   placeholder="XYZ12345"
                   onChange={(e) =>
                     setData({ ...data, manualCode: e.target.value })
                   }
+                  onBlur={setManualCodeUppercase}
                   value={data.manualCode}
                 />
                 <p className="text-danger">{validationMsg.manualCode}</p>
@@ -628,6 +678,8 @@ function CreateVoucher(props) {
                     className="form-check-input"
                     name="voucherCode"
                     id={`membershipRadios`}
+                    value="1"
+                    onChange={selectTypeCode}
                     // value={(data.typeCode = 1)}
                   />{" "}
                   Tự động sinh mã
@@ -643,6 +695,8 @@ function CreateVoucher(props) {
                     className="form-check-input"
                     name="voucherCode"
                     id={`membershipRadios`}
+                    value="2"
+                    onChange={selectTypeCode}
                   />{" "}
                   Tự động sinh mã với tiền tố(tối đa 4 ký tự)
                   <i className="input-helper"></i>
@@ -652,10 +706,12 @@ function CreateVoucher(props) {
                 </label>
                 <input
                   type="text"
+                  id="prefix"
                   className="form-control col-md-2"
                   placeholder="XYZ12345"
                   onChange={(e) => setData({ ...data, prefix: e.target.value })}
                   value={data.prefix}
+                  onBlur={setPrefixCodeUppercase}
                 />
                 <p className="text-danger">{validationMsg.prefix}</p>
               </div>
@@ -673,7 +729,8 @@ function CreateVoucher(props) {
                     className="form-check-input"
                     name="voucherCode"
                     id={`membershipRadios`}
-                    // value={(data.typeCode = 1)}
+                    value="1"
+                    onChange={selectTypeCode}
                   />{" "}
                   Tự động sinh mã
                   <i className="input-helper"></i>
@@ -688,6 +745,8 @@ function CreateVoucher(props) {
                     className="form-check-input"
                     name="voucherCode"
                     id={`membershipRadios`}
+                    value="2"
+                    onChange={selectTypeCode}
                   />{" "}
                   Tự động sinh mã với tiền tố(tối đa 4 ký tự)
                   <i className="input-helper"></i>
@@ -697,10 +756,12 @@ function CreateVoucher(props) {
                 </label>
                 <input
                   type="text"
+                  id="prefix"
                   className="form-control col-md-2"
                   placeholder="XYZ12345"
                   onChange={(e) => setData({ ...data, prefix: e.target.value })}
                   value={data.prefix}
+                  onBlur={setPrefixCodeUppercase}
                 />
                 <p className="text-danger">{validationMsg.prefix}</p>
               </div>
@@ -797,7 +858,6 @@ function CreateVoucher(props) {
     let selectByArea = document.getElementById("selectByArea");
     pkTo.disabled = false;
     pkFrom.disabled = false;
-    console.log(selectByArea);
     setCheckedTypeArea((checkedTypeArea = true));
   };
 
@@ -859,9 +919,13 @@ function CreateVoucher(props) {
     }
     if (isEmpty(data.prefix)) {
       msg.prefix = "Không được bỏ trống trường này";
+    } else if (data.prefix.length > 4) {
+      msg.prefix = "Không được nhập quá 4 kí tự";
     }
     if (isEmpty(data.manualCode)) {
       msg.manualCode = "Không được bỏ trống trường này";
+    } else if (data.manualCode.length > 8) {
+      msg.manualCode = "Không được nhập quá 8 kí tự";
     }
     if (data.voucherType === null) {
       msg.voucherType = "Vui lòng chọn loại mã";
@@ -888,51 +952,51 @@ function CreateVoucher(props) {
   };
   const onSubmitRelease = () => {
     console.log(data);
-    const isValid = validateAll();
-    if (!isValid) return;
+    // const isValid = validateAll();
+    // if (!isValid) return;
 
     //Call API login
 
     // const postData = {
-    //   voucherSerialName: " voucherSerialName",
+    //   voucherSerialName: "ten cua dot phat hanh nay",
     //   voucherType: 2,
-    //   voucherValue: 60000,
+    //   voucherValue: 100000,
     //   title: "Voucher title",
     //   shortName: " ShortName",
-    //   content: " content",
-    //   desc: "description ",
+    //   content: " content cua dot phat hanh nay",
+    //   desc: "description cua dot phat hanh nay ",
     //   image: "image",
     //   discountForm: 2,
     //   vouchcerServiceApplication: 2,
     //   discountType: 1,
-    //   packages: "Kmorder",
+    //   packages: ["64", "62"],
     //   startAt: "2022-11-03",
     //   endAt: "2022-11-19",
     //   typeArea: 2,
-    //   provinceCode: "NA",
-    //   ishared: 2,
-    //   usage_limit: 5000,
-    //   personalUsageLimit: 4000,
+    //   provinceCode: ["HNI", "HCM"],
+    //   ishared: 1,
+    //   usage_limit: 500,
+    //   personalUsageLimit: 4,
     //   status: 2,
-    //   paymentMethod: 2,
-    //   packagesCondition: 2,
-    //   minValue: 2000,
+    //   paymentMethod: 1,
+    //   minValueCodition: 2000,
     //   fromDateCondition: "2022-11-03",
     //   toDateCondition: "2022-12-03",
-    //   userType: 2,
-    //   sexCondition: 1,
-    //   fromAge: 18,
-    //   toAge: 39,
-    //   maxValue: 2800000,
-    //   baseOn: 1,
-    //   duration: 3,
-    //   prefix: "AXDC",
-    //   typeCode: 2,
-    //   manualCode: "HESH1234",
-    //   packageUserCondition: 2,
+    //   userTypeCodition: 3,
+    //   sexCondition: 2,
+    //   fromAge: 14,
+    //   toAge: 30,
+    //   maxValue: 2500000,
+    //   baseOnCondition: 1,
+    //   durationDayCondition: 4,
+    //   prefix: "KHSE",
+    //   typeCode: 3,
+    //   manualCode: "",
+    //   packageUserCondition: [49],
     // };
-
-    createVoucherSerialController(header, data);
+    console.log("postdata: " + JSON.stringify(data));
+    const res = createVoucherSerialController(header, data);
+    console.log("res: " + JSON.stringify(res));
   };
 
   //========================END VALIDATE DATA========================
@@ -1113,18 +1177,8 @@ function CreateVoucher(props) {
                               key={item.code}
                               className="form-check-input"
                               value={item.code}
+                              checked
                               onChange={selectServiceApplication}
-                              // defaultChecked={isCheckedServiceAppliaction}
-                              // defaultChecked={item.code === 1 ? true : false}
-                              // checked={(e) =>
-                              //   setData({
-                              //     ...data,
-                              //     vouchcerServiceApplication: e.target.checked,
-                              //   })
-                              // }
-
-                              // value={(data.vouchcerServiceApplication = item.code)
-                              // disabled={item.code == 1 ? true : false}
                             />{" "}
                             {item.name}
                             <i className="input-helper"></i>
@@ -1176,7 +1230,6 @@ function CreateVoucher(props) {
                         onChange={showListPackage}
                         onClick={disableByArea}
                         defaultChecked={true}
-                        // value={(data.typeArea = 0)}
                       />{" "}
                       Tất cả gói cước
                       <i className="input-helper"></i>
@@ -1221,18 +1274,20 @@ function CreateVoucher(props) {
 
                 <DateRangePicker
                   className="datepicker d-inline-block"
+                  onChange={selectDate}
                   // value=""
                 />
               </Form.Group>
               <Form.Group className="row-fluid">
                 <h6>Phạm vi áp dụng mã (*)</h6>
                 <div className="form-check col-md-12">
-                  <label className="form-check-label">
+                  <label className="form-check-label" htmlFor="typeArea_all">
                     <input
                       type="radio"
                       className="form-check-input"
                       name="typeArea"
-                      value="0"
+                      value={0}
+                      id="typeArea_all"
                       checked={checkedTypeArea}
                       defaultChecked={true}
                       onChange={selectTypeArea}
@@ -1242,13 +1297,13 @@ function CreateVoucher(props) {
                   </label>
                 </div>
                 <div className="form-check radio-select">
-                  <label className="form-check-label">
+                  <label className="form-check-label" htmlFor="pkTo">
                     <input
                       type="radio"
                       className="form-check-input"
                       name="typeArea"
                       id="pkTo"
-                      value="1"
+                      value={1}
                       onChange={selectTypeArea}
                       disabled={isSinglePackage}
                     />
@@ -1264,13 +1319,13 @@ function CreateVoucher(props) {
                   />
                 </div>
                 <div className="form-check radio-select">
-                  <label className="form-check-label">
+                  <label className="form-check-label" htmlFor="pkFrom">
                     <input
                       type="radio"
                       className="form-check-input"
                       name="typeArea"
                       id="pkFrom"
-                      value="2"
+                      value={2}
                       onChange={selectTypeArea}
                       disabled={isSinglePackage}
                     />
@@ -1282,7 +1337,6 @@ function CreateVoucher(props) {
                     options={packageIDToProvince}
                     isDisabled={isSinglePackage}
                     onChange={selectProvince}
-                    // value={(data.provinceCode = packageIDToProvince)}
                   />
                 </div>
               </Form.Group>
@@ -1295,9 +1349,10 @@ function CreateVoucher(props) {
                       className="form-check-input"
                       name="optionsRadios"
                       id="noConditional"
-                      // value={(data.packagesCondition = 1)}
                       onClick={showListConditional}
                       defaultChecked={true}
+                      onChange={selectUserTypeCond}
+                      value="0"
                     />
                     <i className="input-helper"></i>
                     Không có điều kiện
@@ -1310,7 +1365,6 @@ function CreateVoucher(props) {
                       className="form-check-input"
                       name="optionsRadios"
                       id="yesConditional"
-                      // value={(data.packagesCondition = 2)}
                       onClick={showListConditional}
                     />
                     <i className="input-helper"></i>
@@ -1329,7 +1383,8 @@ function CreateVoucher(props) {
                             className="form-check-input"
                             name="optionsRadios"
                             id="optionsRadios1"
-                            // value={(data.userType = 1)}
+                            value="1"
+                            onChange={selectUserTypeCond}
                           />
                           <i className="input-helper"></i>
                           Chưa từng lên đơn của tất cả gói cước
@@ -1344,7 +1399,8 @@ function CreateVoucher(props) {
                             className="form-check-input"
                             name="optionsRadios"
                             id="optionsRadios1"
-                            // value={(data.userType = 2)}
+                            value="2"
+                            onChange={selectUserTypeCond}
                           />
                           <i className="input-helper"></i>
                           Đã từng lên đơn của tất cả gói cước
@@ -1359,7 +1415,8 @@ function CreateVoucher(props) {
                             className="form-check-input"
                             name="optionsRadios"
                             id="optionsRadios2"
-                            // value={(data.userType = 3)}
+                            value="3"
+                            onChange={selectUserTypeCond}
                           />
                           <i className="input-helper"></i>
                           Chưa từng lên đơn của gói cước
@@ -1368,7 +1425,7 @@ function CreateVoucher(props) {
                           options={listPackage}
                           classNamePrefix="gm"
                           components={{ GroupHeading }}
-                          // onChange={handleChange}
+                          onChange={selectPackageUserCondition}
                         />
                       </div>
                     </li>
@@ -1380,7 +1437,8 @@ function CreateVoucher(props) {
                             className="form-check-input"
                             name="optionsRadios"
                             id="optionsRadios3"
-                            // value={(data.userType = 4)}
+                            value="4"
+                            onChange={selectUserTypeCond}
                           />
                           <i className="input-helper"></i>
                           Đã từng lên đơn của gói cước
@@ -1389,7 +1447,7 @@ function CreateVoucher(props) {
                           options={listPackage}
                           classNamePrefix="gm"
                           components={{ GroupHeading }}
-                          // onChange={handleChange}
+                          onChange={selectPackageUserCondition}
                         />
                       </div>
                     </li>
@@ -1401,7 +1459,8 @@ function CreateVoucher(props) {
                             className="form-check-input"
                             name="optionsRadios"
                             id="optionsRadios3"
-                            // value={data.minValue}
+                            value="5"
+                            onChange={selectUserTypeCond}
                           />
                           <i className="input-helper"></i>
                           Tiêu dùng tối thiểu
@@ -1479,6 +1538,7 @@ function CreateVoucher(props) {
                             className="form-check-input"
                             value={item.code}
                             onChange={selectPaymentMethod}
+                            checked
                             // defaultChecked={isCheckedPaymentMethod}
                             // checked={item.code===1?true:false}
                             // value={(data.paymentMethod = item.code)}
