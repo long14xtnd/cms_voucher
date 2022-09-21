@@ -50,6 +50,7 @@
     "react-dom": "^16.14.0",
     "react-i18next": "^11.17.0",
     "react-images": "^1.1.7",
+    "react-images-upload": "^1.2.8",
     "react-input-mask": "^3.0.0-alpha.2",
     "react-jvectormap": "0.0.13",
     "react-loading": "^2.0.3",

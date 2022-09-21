@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import axios from "axios";
 import { Form, Button, Modal } from "react-bootstrap";
 import Select from "react-select";
 import ReactMultiSelectCheckboxes from "react-multiselect-checkboxes";
@@ -23,9 +24,12 @@ import {
   listCodeTypeController,
   listUserController,
   createVoucherSerialController,
+  uploadImageController,
+
 } from "../controller/VoucherApis";
 import { connect } from "react-redux";
 import { saveCustomerInfo } from "../../../../store/actions/AuthAction";
+import ImageUploader from "react-images-upload";
 
 function CreateVoucher(props) {
   const [data, setData] = useState({
@@ -37,19 +41,19 @@ function CreateVoucher(props) {
     content: "",
     desc: "",
     image: "image",
-    discountForm: "",
+    discountForm: null,
     vouchcerServiceApplication: 1,
-    discountType: null,
-    packages: [],
-    startAt: "2022-03-20",
-    endAt: "2022-05-24",
-    typeArea: 2,
+    discountType: 1,
+    packages: ["ALL"],
+    startAt: "",
+    endAt: "",
+    typeArea: "ALL",
     provinceCode: [],
-    ishared: 1,
-    usage_limit: "",
-    personalUsageLimit: "",
+    ishared: null,
+    usage_limit: null,
+    personalUsageLimit: null,
     status: 2,
-    paymentMethod: 1,
+    paymentMethod: ["1"],
     minValueCodition: null,
     fromDateCondition: "2022-11-03",
     toDateCondition: "2022-12-03",
@@ -64,7 +68,14 @@ function CreateVoucher(props) {
     typeCode: 3,
     manualCode: "",
     packageUserCondition: [],
+    userId: [],
   });
+  const [image, setImage] = useState({
+    file: "",
+    username: "",
+    file_type: "",
+  });
+  var [pkStatus, setPkStatus] = useState("");
   const [isCheckedServiceAppliaction, setCheckedServiceApplication] =
     useState(true);
   const [isCheckedPaymentMethod, setCheckedPaymentMethod] = useState(true);
@@ -85,8 +96,66 @@ function CreateVoucher(props) {
   const [packageIDToProvince, setListToProvinceByPackageID] = useState();
   const [listCodeType, setListCodeType] = useState([]);
   const [validationMsg, setValidationMsg] = useState("");
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [urlImage, setUrlImage] = useState();
 
-  //========================CONFIG DATA========================
+  //========================CONFIG DATA=======================
+
+  // On file select (from the pop up)
+  const onFileChange = (event) => {
+    // Update the state
+
+    setSelectedFile(event.target.files[0]);
+  };
+
+  // On file upload (click the upload button)
+  const onFileUpload = (e) => {
+    e.preventDefault();
+    // Create an object of formData
+    const formData = new FormData();
+
+    // Update the formData object
+    formData.append("file", selectedFile, selectedFile.name);
+    formData.append("username", "");
+    formData.append("file_type", "");
+
+    // Details of the uploaded file
+    // console.log(selectedFile);
+
+    // Request made to the backend api
+    // Send formData object
+    axios
+      .post(
+        "https://haloship.imediatech.com.vn/imedia/auth/media/upload_file",
+        formData
+      )
+      .then((response) => {
+        setData({ ...data, image: response.data.file_url });
+        setUrlImage(
+          "https://haloship.imediatech.com.vn/" + response.data.file_url
+        );
+      });
+  };
+  // File content to be displayed after
+  // file upload is complete
+  const fileData = () => {
+    if (urlImage) {
+      return (
+        <div>
+          <h2>File Details:</h2>
+          <img src={urlImage} width="100px" height="100px" />
+        </div>
+      );
+    } else {
+      return (
+        <div>
+          <br />
+          <h4>Vui lòng chọn ảnh trước khi upload</h4>
+        </div>
+      );
+    }
+  };
+
   function formatDate(date) {
     var d = new Date(date),
       month = "" + (d.getMonth() + 1),
@@ -297,6 +366,7 @@ function CreateVoucher(props) {
         result.push({
           label: item.name,
           value: item.id,
+          code: item.code,
         })
       );
       setListFromProvinceByPackageID(result);
@@ -311,6 +381,7 @@ function CreateVoucher(props) {
         result.push({
           label: item.name,
           value: item.id,
+          code: item.code,
         })
       );
 
@@ -319,7 +390,6 @@ function CreateVoucher(props) {
   };
 
   const onChangeSelectPackage = (event) => {
-    console.log(event);
     if (event.length === 1) {
       // Call get province list api for single package
 
@@ -327,9 +397,9 @@ function CreateVoucher(props) {
       axiosGetListPackageFromProvince(packageId);
       axiosGetListPackageToProvince(packageId);
       setIsSinglePackage((isSinglePackage = false));
-      setData({ ...data, packages: [event[0].value] });
+      setData({ ...data, packages: [event[0].value.toString()] });
     } else if (event.length > 1) {
-      console.log(checkedTypeArea);
+      // console.log(checkedTypeArea);
       setCheckedTypeArea((checkedTypeArea = true));
       openModalNoti(
         "Lỗi !",
@@ -338,7 +408,7 @@ function CreateVoucher(props) {
       setIsSinglePackage((isSinglePackage = true));
       let selecttedPackage = [];
       event.map(
-        (item) => (selecttedPackage = [...selecttedPackage, item.value])
+        (item) => (selecttedPackage = [...selecttedPackage, String(item.value)])
       );
       setData({
         ...data,
@@ -348,12 +418,12 @@ function CreateVoucher(props) {
   };
   const selectProvince = (selectedProvince) => {
     if (selectedProvince.length === 1) {
-      setData({ ...data, provinceCode: [selectedProvince[0].value] });
+      setData({ ...data, provinceCode: [selectedProvince[0].code] });
     } else if (selectedProvince.length > 1) {
       let listSelectedProvinces = [];
       selectedProvince.map(
         (item) =>
-          (listSelectedProvinces = [...listSelectedProvinces, item.value])
+          (listSelectedProvinces = [...listSelectedProvinces, item.code])
       );
       setData({
         ...data,
@@ -361,11 +431,32 @@ function CreateVoucher(props) {
       });
     }
   };
+  const selectUserId = (selectedUserId) => {
+    // console.log(selectedUserId);
+    var listSelectedUsersId = [];
+    if (!selectedUserId) {
+      listSelectedUsersId = [];
+    } else if (selectedUserId.length === 1) {
+      listSelectedUsersId = [selectedUserId[0].value.toString()];
+    } else if (selectedUserId.length > 1) {
+      selectedUserId.map(
+        (item) =>
+          (listSelectedUsersId = [
+            ...listSelectedUsersId,
+            item.value.toString(),
+          ])
+      );
+    }
+
+    setData({ ...data, userId: listSelectedUsersId });
+  };
   const selectPackageUserCondition = (selectedPackageUserCondition) => {
     if (selectedPackageUserCondition.length === 1) {
       setData({
         ...data,
-        packageUserCondition: [selectedPackageUserCondition[0].value],
+        packageUserCondition: [
+          selectedPackageUserCondition[0].value.toString(),
+        ],
       });
     } else if (selectedPackageUserCondition.length > 1) {
       let listSelectedPackageUserConditions = [];
@@ -373,7 +464,7 @@ function CreateVoucher(props) {
         (item) =>
           (listSelectedPackageUserConditions = [
             ...listSelectedPackageUserConditions,
-            item.value,
+            item.value.toString(),
           ])
       );
       setData({
@@ -389,11 +480,11 @@ function CreateVoucher(props) {
           <div className="form-group col-md-3 pdr-menu">
             <label htmlFor="exampleInputName1">Mệnh giá VNĐ (*)</label>
             <input
-              type="text"
+              type="number"
               className="form-control"
               placeholder="20,000vnđ"
               onChange={(e) =>
-                setData({ ...data, voucherValue: e.target.value })
+                setData({ ...data, voucherValue: parseInt(e.target.value) })
               }
               value={data.voucherValue}
             />
@@ -406,7 +497,7 @@ function CreateVoucher(props) {
             <div className="form-group col-md-3 pdr-menu">
               <label htmlFor="exampleInputName1">Phần trăm (%) (*)</label>
               <input
-                type="text"
+                type="number"
                 className="form-control"
                 placeholder="10%"
                 onChange={(e) =>
@@ -434,12 +525,12 @@ function CreateVoucher(props) {
                 </div>
                 <div className="col-md-4">
                   <input
-                    type="text"
+                    type="number"
                     className="form-control"
-                    placeholder="100,000đ"
+                    placeholder="100000"
                     name="maxValue"
                     onChange={(e) =>
-                      setData({ ...data, maxValue: e.target.value })
+                      setData({ ...data, maxValue: parseInt(e.target.value) })
                     }
                     value={data.maxValue}
                   />
@@ -468,6 +559,14 @@ function CreateVoucher(props) {
   const selectCodeType = (selectedCodeType) => {
     setData({ ...data, ishared: selectedCodeType.value });
     setB(selectedCodeType.value);
+    console.log(selectedCodeType.value);
+    if (selectedCodeType.value === 3) {
+      setData({
+        ...data,
+        personalUsageLimit: 1,
+        usage_limit: data.userId.length,
+      });
+    }
   };
 
   const codeTypeHtml = () => {
@@ -480,11 +579,11 @@ function CreateVoucher(props) {
                 Số lần sử dụng tối đa (*)
               </label>
               <input
-                type="text"
+                type="number"
                 className="form-control"
                 placeholder="100"
                 onChange={(e) =>
-                  setData({ ...data, usage_limit: e.target.value })
+                  setData({ ...data, usage_limit: parseInt(e.target.value) })
                 }
                 value={data.usage_limit}
                 // value={data.usage_limit}
@@ -496,13 +595,13 @@ function CreateVoucher(props) {
                 Số lượng tối đa cho 1 user (*)
               </label>
               <input
-                type="text"
+                type="number"
                 className="form-control"
                 placeholder="1"
                 onChange={(e) =>
                   setData({
                     ...data,
-                    personalUsageLimit: e.target.value,
+                    personalUsageLimit: parseInt(e.target.value),
                   })
                 }
                 value={data.personalUsageLimit}
@@ -517,11 +616,11 @@ function CreateVoucher(props) {
             <div className="form-group col-md-3 pdr-menu">
               <label htmlFor="exampleInputName1">Nhập số lượng mã (*)</label>
               <input
-                type="text"
+                type="number"
                 className="form-control"
                 placeholder="100"
                 onChange={(e) =>
-                  setData({ ...data, usage_limit: e.target.value })
+                  setData({ ...data, usage_limit: parseInt(e.target.value) })
                 }
                 value={data.usage_limit}
               />
@@ -532,11 +631,14 @@ function CreateVoucher(props) {
               <div className="row">
                 <div className="form-group col-md-4 pdr-menu">
                   <input
-                    type="text"
+                    type="number"
                     className="form-control"
                     placeholder="1"
                     onChange={(e) =>
-                      setData({ ...data, personalUsageLimit: e.target.value })
+                      setData({
+                        ...data,
+                        personalUsageLimit: parseInt(e.target.value),
+                      })
                     }
                     value={data.personalUsageLimit}
                   />
@@ -559,7 +661,10 @@ function CreateVoucher(props) {
                 closeMenuOnSelect={true}
                 components={animatedComponents}
                 isMulti
+                onChange={selectUserId}
+                // onSelect={selectUserId}
               />
+              <p className="text-danger">{validationMsg.userId}</p>
             </div>
           </>
         );
@@ -839,20 +944,34 @@ function CreateVoucher(props) {
     listConditional.style.display = yesConditional.checked ? "block" : "none";
   };
   //show/hide gói cước
-  const showListPackage = () => {
+  const showListPackage = (e) => {
+    setPkStatus((pkStatus = e.target.value));
+    // console.log(pkStatus);
+    if (
+      pkStatus !== "selectPackage" &&
+      data.packages.length > 0 &&
+      data.packages[0] === "ALL"
+    ) {
+      setData({ ...data, packages: [] });
+    }
+    if (pkStatus === "ALL") {
+      setData({ ...data, packages: [] });
+      setData({ ...data, packages: ["ALL"] });
+    }
+
     let pk = document.getElementById("pk");
     let multi_select = document.getElementById("multi_select");
     multi_select.style.display = pk.checked ? "block" : "none";
     setCheckedTypeArea((checkedTypeArea = true));
   };
-  const disableByArea = () => {
+  const disableByArea = (e) => {
     let pkTo = document.getElementById("pkTo");
     let pkFrom = document.getElementById("pkFrom");
     pkTo.disabled = true;
     pkFrom.disabled = true;
     setCheckedTypeArea((checkedTypeArea = true));
   };
-  const unDisableByArea = () => {
+  const unDisableByArea = (e) => {
     let pkTo = document.getElementById("pkTo");
     let pkFrom = document.getElementById("pkFrom");
     let selectByArea = document.getElementById("selectByArea");
@@ -877,56 +996,92 @@ function CreateVoucher(props) {
 
   //========================VALIDATE DATA========================
 
-  // const onChangeVoucherSerialName = (event) => {
-  //   const value = event.target.value;
-  //   setVoucherSerialName(value);
-  // };
-
   const validateAll = () => {
     const msg = {};
-    if (isEmpty(data.voucherSerialName)) {
-      msg.voucherSerialName = "Vui lòng điền tên đợt phát hành";
+    if (pkStatus == "selectPackage") {
+      if (data.packages.length === 0 || data.packages[0] == "ALL") {
+        msg.packages = "Vui lòng chọn gói cước";
+      }
     }
-    if (isEmpty(data.shortName)) {
-      msg.shortName = "Vui lòng điền tên ngắn mã giảm giá";
+    if (isEmpty(data.startAt) && isEmpty(data.endAt)) {
+      msg.date = "Vui lòng chọn khoảng ngày";
     }
-    if (isEmpty(data.content)) {
-      msg.content = "Vui lòng điền nội dung mã giảm giá";
+    let curdate = new Date().toJSON().slice(0, 10);
+    if (curdate > data.startAt) {
+      msg.date = "Ngày bắt đầu không hợp lệ";
     }
-    if (isEmpty(data.title)) {
-      msg.title = "Vui lòng điền Tiêu đề mã giảm giá";
+
+    if (data.typeArea === 1) {
+      if (data.provinceCode.length === 0) {
+        msg.provinceCode1 = "Vui lòng chọn địa chỉ theo khu vực giao";
+      }
     }
-    if (isEmpty(data.desc)) {
-      msg.desc = "Vui lòng điền mô tả chi tiết mã giảm giá";
+    if (data.typeArea === 2) {
+      if (data.provinceCode.length === 0) {
+        msg.provinceCode2 = "Vui lòng chọn địa chỉ theo khu vực gửi";
+      }
     }
-    if (isEmpty(data.voucherValue)) {
-      msg.voucherValue = "Không được bỏ trống trường này";
+
+    if (
+      isEmpty(data.voucherSerialName) ||
+      data.voucherSerialName.length >= 255
+    ) {
+      msg.voucherSerialName = "Tên đợt phát hành không hợp lệ!";
     }
-    if (isEmpty(data.maxValue)) {
-      msg.maxValue = "Vui lòng nhập số tiền áp dụng tối đa";
+    if (isEmpty(data.shortName) || data.shortName.length >= 255) {
+      msg.shortName = "Tên ngắn đợt phát hành không hợp lệ!";
     }
-    if (isEmpty(data.usage_limit)) {
-      msg.usage_limit = "Không được bỏ trống trường này";
+    if (isEmpty(data.content) || data.content.length >= 1000) {
+      msg.content = "Nội dung đợt phát hành không hợp lệ!";
     }
-    if (isEmpty(data.personalUsageLimit)) {
-      msg.personalUsageLimit = "Không được bỏ trống trường này";
+    if (isEmpty(data.title) || data.title.length >= 255) {
+      msg.title = "Tiêu đề đợt phát hành không hợp lệ!";
     }
-    if (isEmpty(data.durationDayCondition)) {
-      msg.durationDayCondition = "Vui lòng nhập số ngày";
+    if (isEmpty(data.desc) || data.desc.length >= 1000) {
+      msg.desc = "Mô tả đợt phát hành không hợp lệ!";
     }
-    if (isEmpty(data.minValueCodition)) {
-      msg.minValueCodition = "Vui lòng nhập giá trị tiêu dùng tối thiểu";
+    if (data.voucherType === 1) {
+      if (data.voucherValue === null || data.voucherValue >= 2000000000) {
+        msg.voucherValue = "Mệnh giá không hợp lệ!";
+      }
     }
-    if (isEmpty(data.prefix)) {
-      msg.prefix = "Không được bỏ trống trường này";
-    } else if (data.prefix.length > 4) {
-      msg.prefix = "Không được nhập quá 4 kí tự";
+    if (data.voucherType === 2) {
+      if (data.voucherValue === null || data.voucherValue >= 100) {
+        msg.voucherValue = "Phần trăm không hợp lệ!";
+      }
+      if (data.maxValue === null || data.maxValue >= 2000000000) {
+        msg.maxValue = "Điều kiện giá trị tối đa không hợp lệ!";
+      }
     }
-    if (isEmpty(data.manualCode)) {
-      msg.manualCode = "Không được bỏ trống trường này";
-    } else if (data.manualCode.length > 8) {
-      msg.manualCode = "Không được nhập quá 8 kí tự";
+    if (data.ishared === 1 && data.typeCode === 2) {
+      if (isEmpty(data.prefix) || data.prefix.length > 4) {
+        msg.prefix = "Không hợp lệ!";
+      }
     }
+    if (data.ishared === 1 && data.typeCode === 3) {
+      // if (isEmpty(data.manualCode)) {
+      //   msg.manualCode = "Không được bỏ trống trường này";
+      // } else if (data.manualCode.length > 8) {
+      //   msg.manualCode = "Không được nhập quá 8 kí tự";
+      // }
+      if (isEmpty(data.manualCode) || data.manualCode.length > 8) {
+        msg.manualCode = "Không hợp lệ!";
+      }
+    }
+    if (data.ishared === 1 || data.ishared === 2) {
+      if (data.usage_limit === null) {
+        msg.usage_limit = "Không được bỏ trống trường này";
+      }
+      if (data.personalUsageLimit === null) {
+        msg.personalUsageLimit = "Không được bỏ trống trường này";
+      }
+    }
+    if (data.ishared === 3) {
+      if (data.userId.length === 0) {
+        msg.userId = "Không được bỏ trống trường này";
+      }
+    }
+
     if (data.voucherType === null) {
       msg.voucherType = "Vui lòng chọn loại mã";
     }
@@ -945,58 +1100,66 @@ function CreateVoucher(props) {
     if (data.status === null) {
       msg.status = "Vui lòng chọn trạng thái";
     }
-
+    // if (curdate > data.endAt) {
+    //   msg.date = "Ngày kết thúc không hợp lệ";
+    // }
+    // if (data.startAt > data.endAt) {
+    //   msg.date = "Ngày bắt đầu không được sau ngày kết thúc";
+    // }
+    // if (data.userTypeCodition === 3) {
+    //   if (data.packages.length === 0) {
+    //     msg.package1 = "Vui lòng chọn gói cước";
+    //   }
+    // }
+    // if (data.userTypeCodition === 4) {
+    //   if (data.packages.length === 0) {
+    //     msg.package2 = "Vui lòng chọn gói cước";
+    //   }
+    // }
+    // if (data.voucherValue === null) {
+    //   msg.voucherValue = "Không được bỏ trống trường này";
+    // }
+    // if (data.userTypeCodition === 5) {
+    //   if (data.minValueCodition === null) {
+    //     msg.minValueCodition = "Vui lòng nhập giá trị tiêu dùng tối thiểu";
+    //   }
+    //   if (data.durationDayCondition === null) {
+    //     msg.durationDayCondition = "Vui lòng nhập số ngày";
+    //   }
+    // }
     setValidationMsg(msg);
+    console.log(msg);
     if (Object.keys(msg).length > 0) return false;
     return true;
   };
   const onSubmitRelease = () => {
     console.log(data);
-    // const isValid = validateAll();
-    // if (!isValid) return;
+
+    // var fileList = document.getElementById("uploadImage").files;
+    // var fileReader = new FileReader();
+    // if (fileReader && fileList && fileList.length) {
+    //   fileReader.readAsArrayBuffer(fileList[0]);
+    //   fileReader.onload = function () {
+    //     var imageData = fileReader.result;
+    //     // setImageData(imageData.byteLength);
+    //     setImage(imageData.byteLength);
+    //     // setImage({ ...image, file: imageData.byteLength });
+    //     console.log(image);
+    //     // console.log(imageData.byteLength);
+    //   };
+    // }
+    // uploadImageController(header, JSON.stringify(image));
+    const isValid = validateAll();
+    if (!isValid) return;
+    console.log("before call api");
 
     //Call API login
 
-    // const postData = {
-    //   voucherSerialName: "ten cua dot phat hanh nay",
-    //   voucherType: 2,
-    //   voucherValue: 100000,
-    //   title: "Voucher title",
-    //   shortName: " ShortName",
-    //   content: " content cua dot phat hanh nay",
-    //   desc: "description cua dot phat hanh nay ",
-    //   image: "image",
-    //   discountForm: 2,
-    //   vouchcerServiceApplication: 2,
-    //   discountType: 1,
-    //   packages: ["64", "62"],
-    //   startAt: "2022-11-03",
-    //   endAt: "2022-11-19",
-    //   typeArea: 2,
-    //   provinceCode: ["HNI", "HCM"],
-    //   ishared: 1,
-    //   usage_limit: 500,
-    //   personalUsageLimit: 4,
-    //   status: 2,
-    //   paymentMethod: 1,
-    //   minValueCodition: 2000,
-    //   fromDateCondition: "2022-11-03",
-    //   toDateCondition: "2022-12-03",
-    //   userTypeCodition: 3,
-    //   sexCondition: 2,
-    //   fromAge: 14,
-    //   toAge: 30,
-    //   maxValue: 2500000,
-    //   baseOnCondition: 1,
-    //   durationDayCondition: 4,
-    //   prefix: "KHSE",
-    //   typeCode: 3,
-    //   manualCode: "",
-    //   packageUserCondition: [49],
-    // };
-    console.log("postdata: " + JSON.stringify(data));
-    const res = createVoucherSerialController(header, data);
-    console.log("res: " + JSON.stringify(res));
+    createVoucherSerialController(header, JSON.stringify(data));
+
+    // console.log("postdata: " + JSON.stringify(data));
+    // const res = createVoucherSerG901ialController(header, data);
+    // console.log("res: " + JSON.stringify(res));
   };
 
   //========================END VALIDATE DATA========================
@@ -1128,24 +1291,12 @@ function CreateVoucher(props) {
                   </Form.Group>
                 </div>
                 <div className="form-group col-md-4 pdr-menu edit-card-select">
-                  <Form.Group>
-                    <label>Thêm ảnh cho chi tiết</label>
-                    <div className="custom-file">
-                      <Form.Control
-                        type="file"
-                        className="form-control visibility-hidden"
-                        id="customFileLang"
-                        lang="es"
-                        // value={data.image}
-                      />
-                      <label
-                        className="custom-file-label"
-                        htmlFor="customFileLang"
-                      >
-                        Upload image
-                      </label>
-                    </div>
-                  </Form.Group>
+                  <div>
+                    <label htmlFor="">Thêm ảnh cho chi tiết</label>
+                    <input type="file" onChange={onFileChange} />
+                    <button onClick={onFileUpload}>Upload!</button>
+                  </div>
+                  {fileData()}
                 </div>
               </div>
               <div className="row">
@@ -1230,6 +1381,7 @@ function CreateVoucher(props) {
                         onChange={showListPackage}
                         onClick={disableByArea}
                         defaultChecked={true}
+                        value="ALL"
                       />{" "}
                       Tất cả gói cước
                       <i className="input-helper"></i>
@@ -1246,6 +1398,7 @@ function CreateVoucher(props) {
                         id="pk"
                         onChange={showListPackage}
                         onClick={unDisableByArea}
+                        value="selectPackage"
                       />{" "}
                       Gói cước
                       <i className="input-helper"></i>
@@ -1264,6 +1417,7 @@ function CreateVoucher(props) {
                     onChange={onChangeSelectPackage}
                     // value={(data.packages = listPackage.list.id)}
                   />
+                  <p className="text-danger">{validationMsg.packages}</p>
                 </div>
               </Form.Group>
               <Form.Group className="mt-4 mb-4">
@@ -1275,8 +1429,10 @@ function CreateVoucher(props) {
                 <DateRangePicker
                   className="datepicker d-inline-block"
                   onChange={selectDate}
-                  // value=""
+                  // minDate={new Date("21-09-2022")}
+                  // maxDate={new Date("29-12-2022")}
                 />
+                <p className="text-danger">{validationMsg.date}</p>
               </Form.Group>
               <Form.Group className="row-fluid">
                 <h6>Phạm vi áp dụng mã (*)</h6>
@@ -1317,6 +1473,7 @@ function CreateVoucher(props) {
                     onChange={selectProvince}
                     // value={(data.provinceCode = packageIDToProvince)}
                   />
+                  <p className="text-danger">{validationMsg.provinceCode1}</p>
                 </div>
                 <div className="form-check radio-select">
                   <label className="form-check-label" htmlFor="pkFrom">
@@ -1338,6 +1495,7 @@ function CreateVoucher(props) {
                     isDisabled={isSinglePackage}
                     onChange={selectProvince}
                   />
+                  <p className="text-danger">{validationMsg.provinceCode2}</p>
                 </div>
               </Form.Group>
               <Form.Group className="row">
@@ -1407,7 +1565,7 @@ function CreateVoucher(props) {
                         </label>
                       </div>
                     </li>
-                    <li>
+                    {/* <li>
                       <div className="form-check radio-select">
                         <label className="form-check-label">
                           <input
@@ -1427,6 +1585,7 @@ function CreateVoucher(props) {
                           components={{ GroupHeading }}
                           onChange={selectPackageUserCondition}
                         />
+                        <p className="text-danger">{validationMsg.package1}</p>
                       </div>
                     </li>
                     <li>
@@ -1449,6 +1608,7 @@ function CreateVoucher(props) {
                           components={{ GroupHeading }}
                           onChange={selectPackageUserCondition}
                         />
+                        <p className="text-danger">{validationMsg.package2}</p>
                       </div>
                     </li>
                     <li>
@@ -1466,12 +1626,12 @@ function CreateVoucher(props) {
                           Tiêu dùng tối thiểu
                         </label>
                         <input
-                          type="text"
+                          type="number"
                           className="form-control"
                           onChange={(e) =>
                             setData({
                               ...data,
-                              minValueCodition: e.target.value,
+                              minValueCodition: parseInt(e.target.value),
                             })
                           }
                           value={data.minValueCodition}
@@ -1481,12 +1641,12 @@ function CreateVoucher(props) {
                         </p>
                         VNĐ Trong
                         <input
-                          type="text"
+                          type="number"
                           className="form-control"
                           onChange={(e) =>
                             setData({
                               ...data,
-                              durationDayCondition: e.target.value,
+                              durationDayCondition: parseInt(e.target.value),
                             })
                           }
                           value={data.durationDayCondition}
@@ -1496,7 +1656,7 @@ function CreateVoucher(props) {
                         </p>
                         Ngày
                       </div>
-                    </li>
+                    </li> */}
                   </ul>
                 </div>
               </Form.Group>

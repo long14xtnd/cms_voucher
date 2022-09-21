@@ -4,9 +4,14 @@ import Select from "react-select";
 import { Link, withRouter } from "react-router-dom";
 import { saveCustomerInfo } from "../../../../store/actions/AuthAction";
 import { Button } from "react-bootstrap";
+import {
+  getListVoucherSerialController,
+  listVoucherStatusController,
+} from "../controller/VoucherApis";
 function ListVoucher(props) {
   //======================================== CONFIG DATA ===============================================
-
+  const [listVoucherSerial, setListVoucherSerial] = useState([]);
+  const [listVoucherStatus, setListVoucherStatus] = useState([]);
   let header = {
     "Content-Type": "application/json",
     "Access-Control-Allow-Origin": "*",
@@ -25,6 +30,29 @@ function ListVoucher(props) {
       minHeight: 35,
     }),
   };
+  // Trạng thái đợt phát hành
+  const axiosListVoucherStatus = async () => {
+    let result = [];
+    let response = await listVoucherStatusController(header);
+    if (response.data && response.status === 200) {
+      // console.log(response.data);
+      response.data.map((item) =>
+        result.push({ value: item.code, label: item.name })
+      );
+      setListVoucherStatus(result);
+    }
+  };
+
+  const axiosGetListVoucherSerial = async () => {
+    let response = await getListVoucherSerialController(header);
+    if (response.data && response.status === 200) {
+      setListVoucherSerial(response.data);
+    }
+  };
+  useEffect(() => {
+    axiosGetListVoucherSerial();
+    axiosListVoucherStatus();
+  }, []);
 
   return (
     <>
@@ -45,7 +73,7 @@ function ListVoucher(props) {
             <div className="form-group col-md-3 pdr-menu edit-card-select">
               <Select
                 styles={customStyles}
-                options={serviceTypeValues}
+                options={listVoucherStatus}
                 placeholder="Trạng thái"
               />
             </div>
@@ -107,22 +135,25 @@ function ListVoucher(props) {
                 </tr>
               </thead>
               <tbody>
-                <td>
-                  <Button
-                   
-                    className="btn btn-primary btn-icon-custom"
-                  >
-                    <i className="mdi mdi-pen"></i>
-                  </Button>
-                </td>
-                <td>Voucher</td>
-                <td>Mã chung</td>
-                <td>2/9/2022</td>
-                <td>31/12/2022</td>
-                <td>20,000</td>
-                <td>100</td>
-                <td>0</td>
-                <td>Chờ duyệt</td>
+                {listVoucherSerial.map((item, i) => {
+                  return [
+                    <tr key={i}>
+                      <td>
+                        <Button className="btn btn-primary btn-icon-custom">
+                          <i className="mdi mdi-pen"></i>
+                        </Button>
+                      </td>
+                      <td>{item.voucherType}</td>
+                      <td>{item.codeType}</td>
+                      <td>{item.fromDate}</td>
+                      <td>{item.toDate}</td>
+                      <td>{item.voucherValue}</td>
+                      <td>{item.usageLimit}</td>
+                      <td>{item.numberUsed}</td>
+                      <td>{item.voucherStatus}</td>
+                    </tr>,
+                  ];
+                })}
               </tbody>
             </table>
           </div>
