@@ -25,7 +25,6 @@ import {
   listUserController,
   createVoucherSerialController,
   uploadImageController,
-
 } from "../controller/VoucherApis";
 import { connect } from "react-redux";
 import { saveCustomerInfo } from "../../../../store/actions/AuthAction";
@@ -47,7 +46,7 @@ function CreateVoucher(props) {
     packages: ["ALL"],
     startAt: "",
     endAt: "",
-    typeArea: "ALL",
+    typeArea: 0,
     provinceCode: [],
     ishared: null,
     usage_limit: null,
@@ -341,6 +340,12 @@ function CreateVoucher(props) {
     });
   };
   const selectTypeArea = (selectedTypeArea) => {
+    console.log(selectedTypeArea.target.value);
+    setData({
+      ...data,
+      typeArea: selectedTypeArea.target.value,
+    });
+
     if (selectedTypeArea.target.value !== 0) {
       setCheckedTypeArea(false);
     } else {
@@ -669,26 +674,7 @@ function CreateVoucher(props) {
           </>
         );
       default:
-        return (
-          <>
-            {/* <div className="form-group col-md-4 pdr-menu">
-              <label htmlFor="exampleInputName1">
-                Số lượng sử dụng tối đa (*)
-              </label>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="20,000vnđ"
-              />
-            </div>
-            <div className="form-group col-md-4 pdr-menu">
-              <label htmlFor="exampleInputName1">
-                Số lần sử dụng tối đa trên 1 user: mặc định là 1 (*)
-              </label>
-              <input type="text" className="form-control" placeholder="1" />
-            </div> */}
-          </>
-        );
+        return <></>;
     }
   };
 
@@ -874,67 +860,7 @@ function CreateVoucher(props) {
           </>
         );
       default:
-        return (
-          <>
-            {/* <div className="col-sm-12">
-              <div className="form-check">
-                <label className="form-check-label">
-                  <input
-                    type="radio"
-                    className="form-check-input"
-                    name="voucherCode"
-                    id={`membershipRadios`}
-                    // value={(data.typeCode = 1)}
-                  />{" "}
-                  Tự động sinh mã
-                  <i className="input-helper"></i>
-                </label>
-              </div>
-            </div>
-            <div className="col-sm-12">
-              <div className="form-check radio-select">
-                <label className="form-check-label">
-                  <input
-                    type="radio"
-                    className="form-check-input"
-                    name="voucherCode"
-                    id="optionsRadios3"
-                    value="option3"
-                  />
-                  <i className="input-helper"></i>
-                  Tự động sinh mã(tối đa 4 ký tự)
-                </label>
-                <input
-                  type="text"
-                  className="form-control col-md-2"
-                  placeholder="100"
-                />
-              </div>
-            </div>
-            <div className="col-sm-12">
-              <div className="form-check">
-                <label className="form-check-label">
-                  <input
-                    type="radio"
-                    className="form-check-input"
-                    name="voucherCode"
-                    id={`membershipRadios`}
-                  />{" "}
-                  Nhập mã (8 ký tự)
-                  <i className="input-helper"></i>
-                  <span className="text-muted d-block">
-                    Mã là chữ cái viết hoa hoặc số
-                  </span>
-                </label>
-                <input
-                  type="text"
-                  className="form-control col-md-2"
-                  placeholder="XYZ12345"
-                />
-              </div>
-            </div> */}
-          </>
-        );
+        return <></>;
     }
   };
   //show hide tiêu chí áp dụng mã có điều kiện và ko có điều kiện
@@ -957,6 +883,7 @@ function CreateVoucher(props) {
     if (pkStatus === "ALL") {
       setData({ ...data, packages: [] });
       setData({ ...data, packages: ["ALL"] });
+      setData({ ...data, typeArea: 0 });
     }
 
     let pk = document.getElementById("pk");
@@ -965,6 +892,8 @@ function CreateVoucher(props) {
     setCheckedTypeArea((checkedTypeArea = true));
   };
   const disableByArea = (e) => {
+    // setData({ ...data, typeArea: "" });
+
     let pkTo = document.getElementById("pkTo");
     let pkFrom = document.getElementById("pkFrom");
     pkTo.disabled = true;
@@ -998,7 +927,7 @@ function CreateVoucher(props) {
 
   const validateAll = () => {
     const msg = {};
-    if (pkStatus == "selectPackage") {
+    if (pkStatus === "selectPackage") {
       if (data.packages.length === 0 || data.packages[0] == "ALL") {
         msg.packages = "Vui lòng chọn gói cước";
       }
@@ -1442,9 +1371,9 @@ function CreateVoucher(props) {
                       type="radio"
                       className="form-check-input"
                       name="typeArea"
-                      value={0}
+                      value="0"
                       id="typeArea_all"
-                      checked={checkedTypeArea}
+                      // checked={checkedTypeArea}
                       defaultChecked={true}
                       onChange={selectTypeArea}
                     />
@@ -1459,7 +1388,7 @@ function CreateVoucher(props) {
                       className="form-check-input"
                       name="typeArea"
                       id="pkTo"
-                      value={1}
+                      value="1"
                       onChange={selectTypeArea}
                       disabled={isSinglePackage}
                     />
@@ -1482,7 +1411,7 @@ function CreateVoucher(props) {
                       className="form-check-input"
                       name="typeArea"
                       id="pkFrom"
-                      value={2}
+                      value="2"
                       onChange={selectTypeArea}
                       disabled={isSinglePackage}
                     />
