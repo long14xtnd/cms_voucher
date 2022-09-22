@@ -64,7 +64,7 @@ function CreateVoucher(props) {
     baseOnCondition: 1,
     durationDayCondition: null,
     prefix: "",
-    typeCode: 3,
+    typeCode: 0,
     manualCode: "",
     packageUserCondition: [],
     userId: [],
@@ -79,6 +79,8 @@ function CreateVoucher(props) {
     useState(true);
   const [isCheckedPaymentMethod, setCheckedPaymentMethod] = useState(true);
   let [isSinglePackage, setIsSinglePackage] = useState(false);
+  let [disablePkTo, setDisablePkTo] = useState(true);
+  let [disablePkFrom, setDisablePkFrom] = useState(true);
   let [checkedTypeArea, setCheckedTypeArea] = useState(true);
   let [showModal, setShowModal] = useState(false);
   let [titleNoti, setTitleNoti] = useState("");
@@ -97,6 +99,8 @@ function CreateVoucher(props) {
   const [validationMsg, setValidationMsg] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
   const [urlImage, setUrlImage] = useState();
+  const [toProvinceCodeTempt, setToProvinceCodeTempt] = useState([]);
+  const [fromProvinceCodeTempt, setFromProvinceCodeTempt] = useState([]);
 
   //========================CONFIG DATA=======================
 
@@ -149,7 +153,7 @@ function CreateVoucher(props) {
       return (
         <div>
           <br />
-          <h4>Vui lòng chọn ảnh trước khi upload</h4>
+          <h4 className="text-danger">Vui lòng chọn ảnh trước khi upload</h4>
         </div>
       );
     }
@@ -297,6 +301,7 @@ function CreateVoucher(props) {
     let result = [];
     let response = await listCodeTypeController(header);
     if (response.data && response.status === 200) {
+      // console.log(response.data);
       response.data.map((item) =>
         result.push({ value: item.code, label: item.name })
       );
@@ -340,7 +345,7 @@ function CreateVoucher(props) {
     });
   };
   const selectTypeArea = (selectedTypeArea) => {
-    console.log(selectedTypeArea.target.value);
+    // console.log(selectedTypeArea.target.value);
     setData({
       ...data,
       typeArea: selectedTypeArea.target.value,
@@ -405,6 +410,8 @@ function CreateVoucher(props) {
       setData({ ...data, packages: [event[0].value.toString()] });
     } else if (event.length > 1) {
       // console.log(checkedTypeArea);
+      setDisablePkFrom(true);
+      setDisablePkTo(true);
       setCheckedTypeArea((checkedTypeArea = true));
       openModalNoti(
         "Lỗi !",
@@ -421,7 +428,7 @@ function CreateVoucher(props) {
       });
     }
   };
-  const selectProvince = (selectedProvince) => {
+  const selectProvinceTo = (selectedProvince) => {
     if (selectedProvince.length === 1) {
       setData({ ...data, provinceCode: [selectedProvince[0].code] });
     } else if (selectedProvince.length > 1) {
@@ -435,6 +442,24 @@ function CreateVoucher(props) {
         provinceCode: listSelectedProvinces,
       });
     }
+    console.log(data.provinceCode);
+  };
+  const selectProvinceFrom = (selectedProvince) => {
+    if (selectedProvince.length === 1) {
+      setData({ ...data, provinceCode: [selectedProvince[0].code] });
+      
+    } else if (selectedProvince.length > 1) {
+      let listSelectedProvinces = [];
+      selectedProvince.map(
+        (item) =>
+          (listSelectedProvinces = [...listSelectedProvinces, item.code])
+      );
+      setData({
+        ...data,
+        provinceCode: listSelectedProvinces,
+      });
+    }
+    console.log(data.provinceCode);
   };
   const selectUserId = (selectedUserId) => {
     // console.log(selectedUserId);
@@ -562,16 +587,17 @@ function CreateVoucher(props) {
 
   const [b, setB] = useState();
   const selectCodeType = (selectedCodeType) => {
+    // console.log(selectedCodeType);
     setData({ ...data, ishared: selectedCodeType.value });
     setB(selectedCodeType.value);
-    console.log(selectedCodeType.value);
-    if (selectedCodeType.value === 3) {
-      setData({
-        ...data,
-        personalUsageLimit: 1,
-        usage_limit: data.userId.length,
-      });
-    }
+    // console.log(selectedCodeType.value);
+    // if (selectedCodeType.value === 3) {
+    //   setData({
+    //     ...data,
+    //     personalUsageLimit: 1,
+    //     usage_limit: data.userId.length,
+    //   });
+    // }
   };
 
   const codeTypeHtml = () => {
@@ -593,7 +619,7 @@ function CreateVoucher(props) {
                 value={data.usage_limit}
                 // value={data.usage_limit}
               />
-              <p className="text-danger">{validationMsg.usage_limit}</p>
+              <p className="text-danger">{validationMsg.usage_limit1}</p>
             </div>
             <div className="form-group col-md-4 pdr-menu">
               <label htmlFor="exampleInputName1">
@@ -611,7 +637,7 @@ function CreateVoucher(props) {
                 }
                 value={data.personalUsageLimit}
               />
-              <p className="text-danger">{validationMsg.personalUsageLimit}</p>
+              <p className="text-danger">{validationMsg.personalUsageLimit1}</p>
             </div>
           </>
         );
@@ -629,7 +655,7 @@ function CreateVoucher(props) {
                 }
                 value={data.usage_limit}
               />
-              <p className="text-danger">{validationMsg.usage_limit}</p>
+              <p className="text-danger">{validationMsg.usage_limit2}</p>
             </div>
             <div className="form-group col-md-6 pdr-menu">
               <label htmlFor="exampleInputName1">Số lần sử dụng 1 mã(*)</label>
@@ -648,7 +674,7 @@ function CreateVoucher(props) {
                     value={data.personalUsageLimit}
                   />
                   <p className="text-danger">
-                    {validationMsg.personalUsageLimit}
+                    {validationMsg.personalUsageLimit2}
                   </p>
                 </div>
               </div>
@@ -799,7 +825,7 @@ function CreateVoucher(props) {
                   type="text"
                   id="prefix"
                   className="form-control col-md-2"
-                  placeholder="XYZ12345"
+                  placeholder="XYZT"
                   onChange={(e) => setData({ ...data, prefix: e.target.value })}
                   value={data.prefix}
                   onBlur={setPrefixCodeUppercase}
@@ -849,7 +875,7 @@ function CreateVoucher(props) {
                   type="text"
                   id="prefix"
                   className="form-control col-md-2"
-                  placeholder="XYZ12345"
+                  placeholder="XYZT"
                   onChange={(e) => setData({ ...data, prefix: e.target.value })}
                   value={data.prefix}
                   onBlur={setPrefixCodeUppercase}
@@ -920,6 +946,40 @@ function CreateVoucher(props) {
       </div>
     </div>
   );
+  const onClickSetTypeAreaTo = () => {
+    setDisablePkTo(false);
+    setDisablePkFrom(true);
+    // data.provinceCode = [];
+    // data.provinceCode.length = 0;
+    // setData({ ...data, provinceCode:  });
+    let multiCheckedTo = document.getElementById("typeArePKTo");
+    multiCheckedTo.style.display = "block";
+    let multiCheckedFrom = document.getElementById("typeArePKFrom");
+    multiCheckedFrom.style.display = "none";
+    // for (var x in multiChecked) {
+    //   x.checked = false;
+    // }
+    console.log("khu vuc giao");
+    console.log(data.provinceCode);
+  };
+  const onClickSetTypeAreaFrom = () => {
+    setDisablePkTo(true);
+    setDisablePkFrom(false);
+    // data.provinceCode = [];
+    // data.provinceCode.length = 0;
+    // setData({ ...data, provinceCode: [] });
+
+    let multiCheckedTo = document.getElementById("typeArePKTo");
+    multiCheckedTo.style.display = "none";
+    let multiCheckedFrom = document.getElementById("typeArePKFrom");
+    multiCheckedFrom.style.display = "block";
+    // for (var x in multiChecked) {
+    //   x.checked = false;
+    // }
+
+    console.log("khu vuc gui");
+    console.log(data.provinceCode);
+  };
 
   //========================END CONFIG DATA========================
 
@@ -927,6 +987,7 @@ function CreateVoucher(props) {
 
   const validateAll = () => {
     const msg = {};
+
     if (pkStatus === "selectPackage") {
       if (data.packages.length === 0 || data.packages[0] == "ALL") {
         msg.packages = "Vui lòng chọn gói cước";
@@ -982,34 +1043,122 @@ function CreateVoucher(props) {
         msg.maxValue = "Điều kiện giá trị tối đa không hợp lệ!";
       }
     }
-    if (data.ishared === 1 && data.typeCode === 2) {
-      if (isEmpty(data.prefix) || data.prefix.length > 4) {
-        msg.prefix = "Không hợp lệ!";
+    if (data.ishared === null) {
+      msg.ishared = "Vui lòng chọn loại mã";
+    }
+    //validate cấu trúc mã voucher
+    if (data.ishared !== null) {
+      if (data.typeCode === 0) {
+        msg.typeCode = "Vui lòng chọn một cấu trúc mã voucher";
       }
     }
-    if (data.ishared === 1 && data.typeCode === 3) {
-      // if (isEmpty(data.manualCode)) {
-      //   msg.manualCode = "Không được bỏ trống trường này";
-      // } else if (data.manualCode.length > 8) {
-      //   msg.manualCode = "Không được nhập quá 8 kí tự";
-      // }
-      if (isEmpty(data.manualCode) || data.manualCode.length > 8) {
-        msg.manualCode = "Không hợp lệ!";
+    // if (data.typeCode === 0) {
+    //   msg.typeCode = "Vui lòng chọn một trong 3 loại mã";
+    // }
+    // if (data.ishared === null && data.typeCode === 0) {
+    //   msg.typeCode = "Vui lòng chọn một trong 3 loại mã";
+    // }
+    // if (data.ishared === 1 && data.typeCode === 2) {
+    //   if (isEmpty(data.prefix) || data.prefix.length > 4) {
+    //     msg.prefix = "Không hợp lệ!";
+    //   }
+    // }
+
+    // if (data.ishared === 1 && data.typeCode === 3) {
+    //   // if (isEmpty(data.manualCode)) {
+    //   //   msg.manualCode = "Không được bỏ trống trường này";
+    //   // } else if (data.manualCode.length > 8) {
+    //   //   msg.manualCode = "Không được nhập quá 8 kí tự";
+    //   // }
+    //   if (isEmpty(data.manualCode) || data.manualCode.length > 8) {
+    //     msg.manualCode = "Không hợp lệ!";
+    //   }
+    // }
+
+    //validate case loại 1 mã nhiều người sử dụng
+    if (data.ishared === 1) {
+      //Số lần sử dụng tối đa
+      if (
+        data.usage_limit === null ||
+        data.usage_limit >= listUser.length ||
+        isNaN(data.usage_limit)
+      ) {
+        msg.usage_limit1 = "Không hợp lệ!";
+      }
+      //Số lượng tối đa cho 1 user
+      if (
+        data.personalUsageLimit === null ||
+        data.personalUsageLimit >= listUser.length ||
+        isNaN(data.personalUsageLimit)
+      ) {
+        msg.personalUsageLimit1 = "Không hợp lệ!";
+      }
+      //Tự động sinh mã tối đa 4 ký tự
+
+      if (data.typeCode === 2) {
+        if (isEmpty(data.prefix) || data.prefix.length > 4) {
+          msg.prefix = "Không hợp lệ!";
+        }
+      }
+      //Nhập mã 8 ký tự
+      if (data.typeCode === 3) {
+        if (isEmpty(data.manualCode) || data.manualCode.length > 8) {
+          msg.manualCode = "Không hợp lệ!";
+        }
       }
     }
-    if (data.ishared === 1 || data.ishared === 2) {
-      if (data.usage_limit === null) {
-        msg.usage_limit = "Không được bỏ trống trường này";
+    //validate case loại mã yêu cầu nhập
+    if (data.ishared === 2) {
+      //Số lần sử dụng tối đa
+      if (
+        data.usage_limit === null ||
+        data.usage_limit >= listUser.length ||
+        isNaN(data.usage_limit)
+      ) {
+        msg.usage_limit2 = "Không hợp lệ!";
       }
-      if (data.personalUsageLimit === null) {
-        msg.personalUsageLimit = "Không được bỏ trống trường này";
+      //Số lượng tối đa cho 1 user
+      if (
+        data.personalUsageLimit === null ||
+        data.personalUsageLimit >= listUser.length ||
+        isNaN(data.personalUsageLimit)
+      ) {
+        msg.personalUsageLimit2 = "Không hợp lệ!";
+      }
+      //Tự động sinh mã tối đa 4 ký tự
+
+      if (data.typeCode === 2) {
+        if (isEmpty(data.prefix) || data.prefix.length > 4) {
+          msg.prefix = "Không hợp lệ!";
+        }
       }
     }
+    //validate case loại gán cho tài khoản
     if (data.ishared === 3) {
       if (data.userId.length === 0) {
         msg.userId = "Không được bỏ trống trường này";
       }
+      if (data.typeCode === 2) {
+        if (isEmpty(data.prefix) || data.prefix.length > 4) {
+          msg.prefix = "Không hợp lệ!";
+        }
+      }
     }
+    //validate số lượng tối đa cho 1 user
+    // if (data.ishared === 1 || data.ishared === 2) {
+    //   if (data.usage_limit === null) {
+    //     msg.usage_limit = "Không được bỏ trống trường này";
+    //   }
+    //   if (data.personalUsageLimit === null) {
+    //     msg.personalUsageLimit = "Không được bỏ trống trường này";
+    //   }
+    // }
+
+    // if (data.ishared === 3) {
+    //   if (data.userId.length === 0) {
+    //     msg.userId = "Không được bỏ trống trường này";
+    //   }
+    // }
 
     if (data.voucherType === null) {
       msg.voucherType = "Vui lòng chọn loại mã";
@@ -1017,9 +1166,7 @@ function CreateVoucher(props) {
     if (data.discountForm === null) {
       msg.discountForm = "Vui lòng chọn hình thức";
     }
-    if (data.ishared === null) {
-      msg.ishared = "Vui lòng chọn loại mã";
-    }
+
     if (data.vouchcerServiceApplication === null) {
       msg.vouchcerServiceApplication = "Vui lòng chọn dịch vụ áp dụng";
     }
@@ -1391,17 +1538,22 @@ function CreateVoucher(props) {
                       value="1"
                       onChange={selectTypeArea}
                       disabled={isSinglePackage}
+                      // onClick={(e) => setDisablePkTo(false)}
+                      onClick={onClickSetTypeAreaTo}
                     />
                     <i className="input-helper"></i>
                     Theo khu vực giao
                   </label>
-                  <ReactMultiSelectCheckboxes
-                    id="selectByArea1"
-                    options={packageIDFromProvince}
-                    isDisabled={isSinglePackage}
-                    onChange={selectProvince}
-                    // value={(data.provinceCode = packageIDToProvince)}
-                  />
+                  <div id="typeArePKTo" style={{ display: "none" }}>
+                    <ReactMultiSelectCheckboxes
+                      id="selectByArea1"
+                      options={packageIDFromProvince}
+                      // disabled={true}
+                      isDisabled={disablePkTo}
+                      onChange={selectProvinceTo}
+                    />
+                  </div>
+
                   <p className="text-danger">{validationMsg.provinceCode1}</p>
                 </div>
                 <div className="form-check radio-select">
@@ -1414,16 +1566,20 @@ function CreateVoucher(props) {
                       value="2"
                       onChange={selectTypeArea}
                       disabled={isSinglePackage}
+                      // onClick={(e) => setDisablePkFrom(false)}
+                      onClick={onClickSetTypeAreaFrom}
                     />
                     <i className="input-helper"></i>
                     Theo khu vực gửi
                   </label>
-                  <ReactMultiSelectCheckboxes
-                    id="selectByArea2"
-                    options={packageIDToProvince}
-                    isDisabled={isSinglePackage}
-                    onChange={selectProvince}
-                  />
+                  <div id="typeArePKFrom" style={{ display: "none" }}>
+                    <ReactMultiSelectCheckboxes
+                      id="selectByArea2"
+                      options={packageIDToProvince}
+                      isDisabled={disablePkFrom}
+                      onChange={selectProvinceFrom}
+                    />
+                  </div>
                   <p className="text-danger">{validationMsg.provinceCode2}</p>
                 </div>
               </Form.Group>
@@ -1609,6 +1765,7 @@ function CreateVoucher(props) {
                 <label className="col-sm-12 col-form-label d-block">
                   Cấu trúc mã voucher (*)
                 </label>
+                <p className="text-danger">{validationMsg.typeCode}</p>
                 {codestructureHtml()}
               </Form.Group>
               <div className="row-fluid">
