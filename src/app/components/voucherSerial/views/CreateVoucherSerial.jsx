@@ -25,12 +25,67 @@ import {
   listUserController,
   createVoucherSerialController,
   uploadImageController,
-} from "../controller/VoucherApis";
+  getDetailVoucherSerialController,
+} from "../controller/voucherSerialApis";
 import { connect } from "react-redux";
 import { saveCustomerInfo } from "../../../../store/actions/AuthAction";
 import ImageUploader from "react-images-upload";
+const queryParams = new URLSearchParams(window.location.search);
+const id = queryParams.get("id");
+console.log(id);
+
+//nếu có id gọi api get voucher
 
 function CreateVoucher(props) {
+  //api get detail voucher serial
+  const axiosGetDetailVoucherSerial = async () => {
+    let response = await getDetailVoucherSerialController(id, header);
+    if (response.data && response.status === 200) {
+      console.log(response.data);
+
+      setData({
+        ...data,
+        voucherSerialName: response.data.voucherSerial.name,
+        voucherType: response.data.vapplicable.type,
+        voucherValue: response.data.vapplicable.value,
+        title: response.data.voucherSerial.title,
+        shortName: response.data.voucherSerial.shortName,
+        content: response.data.voucherSerial.content,
+        desc: response.data.voucherSerial.desc,
+        image: response.data.voucherSerial.image,
+        discountForm: response.data.vapplicable.method,
+        vouchcerServiceApplication: 1, //hỏi lại thiện
+        discountType: response.data.vapplicable.applyFor,
+        packages: [response.data.objectCondition.shipPackages],
+        startAt: response.data.voucherSerial.startAt,
+        endAt: response.data.voucherSerial.endAt,
+        typeArea: response.data.areaCondition.type,
+        provinceCode: [response.data.areaCondition.provinceCodes],
+        ishared: response.data.voucherSerial.isShared,
+        usage_limit: response.data.voucherSerial.usageLimit,
+        personalUsageLimit: response.data.voucherSerial.personalUsageLimit,
+        status: response.data.voucherSerial.status,
+        paymentMethod: response.data.condition.paymentMethod,
+        minValueCodition: response.data.valueCondition.minValue,
+        fromDateCondition: response.data.valueCondition.fromDate,
+        toDateCondition: response.data.valueCondition.toDate,
+        userTypeCodition: 0,
+        sexCondition: response.data.userCondition.sex,
+        fromAge: response.data.userCondition.fromAge,
+        toAge: response.data.userCondition.toAge,
+        maxValue: response.data.vapplicable.maxValue,
+        baseOnCondition: response.data.valueCondition.baseOn,
+        durationDayCondition: response.data.valueCondition.duration,
+        prefix: response.data.voucherSerial.prefix,
+        typeCode: response.data.voucherSerial.typeCode,
+        manualCode: response.data.voucherSerial.manualCode,
+        packageUserCondition: response.data.userCondition.packageCondition,
+        userId: response.data.voucherSerial.userId,
+      });
+      // console.log(response.data);
+    }
+  };
+  //data đẩy lên
   const [data, setData] = useState({
     voucherSerialName: "",
     voucherType: null,
@@ -69,6 +124,7 @@ function CreateVoucher(props) {
     packageUserCondition: [],
     userId: [],
   });
+
   const [image, setImage] = useState({
     file: "",
     username: "",
@@ -447,7 +503,6 @@ function CreateVoucher(props) {
   const selectProvinceFrom = (selectedProvince) => {
     if (selectedProvince.length === 1) {
       setData({ ...data, provinceCode: [selectedProvince[0].code] });
-      
     } else if (selectedProvince.length > 1) {
       let listSelectedProvinces = [];
       selectedProvince.map(
@@ -1176,12 +1231,7 @@ function CreateVoucher(props) {
     if (data.status === null) {
       msg.status = "Vui lòng chọn trạng thái";
     }
-    // if (curdate > data.endAt) {
-    //   msg.date = "Ngày kết thúc không hợp lệ";
-    // }
-    // if (data.startAt > data.endAt) {
-    //   msg.date = "Ngày bắt đầu không được sau ngày kết thúc";
-    // }
+
     // if (data.userTypeCodition === 3) {
     //   if (data.packages.length === 0) {
     //     msg.package1 = "Vui lòng chọn gói cước";
@@ -1252,6 +1302,7 @@ function CreateVoucher(props) {
     axiosGetListPackageToProvince();
     axiosListCodeType();
     axiosListUser();
+    axiosGetDetailVoucherSerial();
   }, []);
 
   return (
@@ -1883,4 +1934,10 @@ const mapDispatchToProps = (dispatch) => {
 };
 
 //====================================================================================================
-export default connect(mapStateToProps, mapDispatchToProps)(CreateVoucher);
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(
+  CreateVoucher
+  // EditVoucherSerial
+);

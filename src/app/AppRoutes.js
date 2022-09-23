@@ -8,25 +8,29 @@ const materialConversion = lazy(() =>
 // const Authenticator = lazy(() =>
 //   import("./components/Authenticator/controllers/authenticator")
 // );
-const ListVoucher = lazy(() =>
-  import("./components/Voucher/views/ListVoucher")
+const ListVoucherSerial = lazy(() =>
+  import("./components/voucherSerial/views/ListVoucherSerial.jsx")
 );
-const CreateVoucher = lazy(() =>
-  import("./components/Voucher/views/CreateVoucher")
+const CreateVoucherSerial = lazy(() =>
+  import("./components/voucherSerial/views/CreateVoucherSerial")
 );
-const test = lazy(() => import("./components/Voucher/views/test"));
+const test = lazy(() => import("./components/voucherSerial/views/test"));
 
 class AppRoutes extends Component {
   render() {
     return (
       <Suspense fallback={<Spinner />}>
         <Switch>
-          <Route exact path="/listVoucher" component={ListVoucher} />
+          <Route
+            exact
+            path="/listVoucherSerial"
+            component={ListVoucherSerial}
+          />
           <Route path="/materialConversion" component={materialConversion} />
-          <Route path="/createVoucher" component={CreateVoucher} />
+          <Route path="/createVoucherSerial" component={CreateVoucherSerial} />
           <Route path="/test" component={test} />
 
-          <Redirect to="/listVoucher" />
+          <Redirect to="/listVoucherSerial" />
         </Switch>
       </Suspense>
     );

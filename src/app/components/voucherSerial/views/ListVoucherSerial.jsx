@@ -4,24 +4,29 @@ import Select from "react-select";
 import { Link, withRouter } from "react-router-dom";
 import { saveCustomerInfo } from "../../../../store/actions/AuthAction";
 import { Button } from "react-bootstrap";
+import ReactPagination from "react-paginate";
 import {
   getListVoucherSerialController,
   listVoucherStatusController,
-} from "../controller/VoucherApis";
+} from "../controller/voucherSerialApis";
+
 function ListVoucher(props) {
   //======================================== CONFIG DATA ===============================================
   const [listVoucherSerial, setListVoucherSerial] = useState([]);
   const [listVoucherStatus, setListVoucherStatus] = useState([]);
+  let [totalRecord, setTotalPage] = useState(0);
+  const [request, setRequest] = useState({
+    searchByName: "",
+    voucherStatus: "",
+    size: 20,
+    index: 1,
+  });
+
   let header = {
     "Content-Type": "application/json",
     "Access-Control-Allow-Origin": "*",
     Authorization: props.token,
   };
-
-  const serviceTypeValues = [
-    { value: "1", label: "Hoạt động" },
-    { value: "2", label: "Không hoạt động" },
-  ];
 
   const customStyles = {
     control: (base) => ({
@@ -30,6 +35,10 @@ function ListVoucher(props) {
       minHeight: 35,
     }),
   };
+
+  //====================================================================================================
+
+  //====================================== CALL API ===============================================
   // Trạng thái đợt phát hành
   const axiosListVoucherStatus = async () => {
     let result = [];
@@ -42,17 +51,47 @@ function ListVoucher(props) {
       setListVoucherStatus(result);
     }
   };
-
+  //lấy ra ds đợt phát hành
   const axiosGetListVoucherSerial = async () => {
-    let response = await getListVoucherSerialController(header);
+    let response = await getListVoucherSerialController(request, header);
     if (response.data && response.status === 200) {
-      setListVoucherSerial(response.data);
+      // console.log(response.data);
+      setListVoucherSerial(response.data.listData);
+      setTotalPage(response.data.totalRecord);
     }
   };
+  //====================================================================================================
+
+  //====================================== HANDLE DATA SEARCH ===============================================
+  const handleSearchVoucherSerial = (data) => {
+    setRequest({ ...request, searchByName: data.target.value });
+  };
+  const handleSearchVoucherSerialStatus = (data) => {
+    setRequest({ ...request, voucherStatus: data.value });
+  };
+  //====================================================================================================
+
+  //====================================== HANDLE BUTTON ===============================================
+  const openFormEdit = (data) => {
+    // data.preventDefault();
+    console.log(data);
+  };
+
+  const onPageClick = (data) => {
+    // console.log(data);
+    setRequest({ ...request, index: data.selected + 1 });
+    window.scrollTo(0, 0);
+  };
+  const onRefresh = () => {
+    window.location.reload();
+  };
+  //====================================================================================================
+
+  //========================================== RENDER ==================================================
   useEffect(() => {
     axiosGetListVoucherSerial();
     axiosListVoucherStatus();
-  }, []);
+  }, [request]);
 
   return (
     <>
@@ -67,6 +106,7 @@ function ListVoucher(props) {
                 type="text"
                 className="form-control"
                 placeholder="Tên đợt phát hành"
+                onChange={handleSearchVoucherSerial}
               />
             </div>
 
@@ -75,24 +115,35 @@ function ListVoucher(props) {
                 styles={customStyles}
                 options={listVoucherStatus}
                 placeholder="Trạng thái"
+                onChange={handleSearchVoucherSerialStatus}
               />
             </div>
 
             <div className="form-group col-md-3 pdr-menu">
-              <button
+              {/* <button
                 type="button"
                 className="btn btn-primary bth-cancel btn-icon-text"
+                onClick={searchDataVoucherSerial}
               >
                 Tìm kiếm
-              </button>
+              </button> */}
             </div>
 
             <div className="form-group col-md-3 pdl-menu">
               <div className="d-flex align-items-center justify-content-md-end">
                 <div className="pr-1 mb-3 mb-xl-0">
+                  <button
+                    type="button"
+                    className="btn btn-danger bth-cancel btn-icon-text"
+                    onClick={onRefresh}
+                  >
+                    Bỏ lọc
+                  </button>
+                </div>
+                <div className="pr-1 mb-3 mb-xl-0">
                   <Link
                     className="btn btn-success bth-cancel btn-icon-text"
-                    to="/createVoucher"
+                    to="/createVoucherSerial"
                   >
                     Thêm mới
                   </Link>
@@ -135,13 +186,16 @@ function ListVoucher(props) {
                 </tr>
               </thead>
               <tbody>
-                {listVoucherSerial.map((item, i) => {
-                  return [
+                {listVoucherSerial && listVoucherSerial.length !== 0 ? (
+                  listVoucherSerial.map((item, i) => (
                     <tr key={i}>
                       <td>
                         <Button className="btn btn-primary btn-icon-custom">
                           <i className="mdi mdi-pen"></i>
                         </Button>
+                        <Link to={`/createVoucherSerial?id=${item.id}`}>
+                          {item.voucherSerialName}
+                        </Link>
                       </td>
                       <td>{item.voucherType}</td>
                       <td>{item.codeType}</td>
@@ -151,11 +205,37 @@ function ListVoucher(props) {
                       <td>{item.usageLimit}</td>
                       <td>{item.numberUsed}</td>
                       <td>{item.voucherStatus}</td>
-                    </tr>,
-                  ];
-                })}
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td className="text-center">
+                      Không có Đợt phát hành voucher nào
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
+            <ReactPagination
+              className=""
+              previousLabel={"<<"}
+              nextLabel={">>"}
+              breakLabel={"..."}
+              pageCount={Math.ceil(totalRecord / request.size)}
+              marginPagesDisplayed={1}
+              pageRangeDisplayed={4}
+              containerClassName={"pagination justify-content-center mt-4"}
+              pageClassName={"page-item"}
+              pageLinkClassName={"page-link"}
+              previousClassName={"page-item"}
+              previousLinkClassName={"page-link"}
+              nextClassName={"page-item"}
+              nextLinkClassName={"page-link"}
+              breakClassName={"page-item"}
+              breakLinkClassName={"page-link"}
+              activeClassName={"active"}
+              onPageChange={onPageClick}
+            />
           </div>
         </div>
       </div>

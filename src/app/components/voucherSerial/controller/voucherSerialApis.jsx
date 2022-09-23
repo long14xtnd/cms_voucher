@@ -1,14 +1,25 @@
 import axios from "../../../../axios";
-//get danh sách đợt phát hành
-const getListVoucherSerialController = (header) => {
+//get chi tiết thông tin đợt phát hành
+const getDetailVoucherSerialController = (id, header) => {
   return axios({
-    url: "list-voucher-serial/list",
-    method: "get",
+    url: "/detail-voucher-serial/detail",
+    method: "GET",
     params: {
-      searchByName: "",
-      voucherStatus: "",
-      size: 3,
-      index: 1,
+      voucherSerialId: id,
+    },
+    headers: header,
+  });
+};
+//get danh sách đợt phát hành
+const getListVoucherSerialController = (data, header) => {
+  return axios({
+    url: "/list-voucher-serial/list",
+    method: "GET",
+    params: {
+      searchByName: data.searchByName,
+      voucherStatus: data.voucherStatus,
+      size: data.size,
+      index: data.index,
     },
     headers: header,
   });
@@ -146,4 +157,5 @@ export {
   createVoucherSerialController,
   uploadImageController,
   getListVoucherSerialController,
+  getDetailVoucherSerialController,
 };
