@@ -1,4 +1,13 @@
 import axios from "../../../../axios";
+//sửa đợt phát hành
+const editVoucherSerialController = (data, header) => {
+  return axios({
+    url: "/edit-voucher-serial/edit",
+    method: "POST",
+    data: data,
+    headers: header,
+  });
+};
 //get chi tiết thông tin đợt phát hành
 const getDetailVoucherSerialController = (id, header) => {
   return axios({
@@ -44,10 +53,16 @@ const createVoucherSerialController = (header, data) => {
 };
 
 // Danh sách user
-const listUserController = (header) => {
+const listUserController = (data, header) => {
+  if (!data) {
+    return [];
+  }
   return axios({
     url: "/add-voucher-serial/get-all-user",
     method: "get",
+    params: {
+      phone: data,
+    },
     headers: header,
   });
 };
@@ -107,6 +122,7 @@ const listPackageController = (header) => {
     headers: header,
   });
 };
+//Phạm vi áp dụng mã theo khu vực gửi
 const listFromProvinceController = (data, header) => {
   if (!data) {
     return [];
@@ -115,7 +131,7 @@ const listFromProvinceController = (data, header) => {
     url: "/add-voucher-serial/get-from-province/",
     method: "get",
     params: {
-      packageId: data,
+      packageCode: data,
     },
     headers: header,
   });
@@ -129,7 +145,7 @@ const listToProvinceController = (data, header) => {
     url: "/add-voucher-serial/get-to-province/",
     method: "get",
     params: {
-      packageId: data,
+      packageCode: data,
     },
     headers: header,
   });
@@ -158,4 +174,5 @@ export {
   uploadImageController,
   getListVoucherSerialController,
   getDetailVoucherSerialController,
+  editVoucherSerialController,
 };
