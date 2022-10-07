@@ -9,7 +9,7 @@ import { store } from "./store/store";
 
 ReactDOM.render(
   <Provider store={store}>
-    <BrowserRouter basename="/CMS_FACTORY">
+    <BrowserRouter>
       <App />
     </BrowserRouter>
   </Provider>,

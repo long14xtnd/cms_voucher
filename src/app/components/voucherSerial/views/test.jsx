@@ -1,90 +1,18 @@
-import axios from "axios";
-
-import React, { Component } from "react";
-
-class App extends Component {
-  state = {
-    // Initially, no file is selected
-    selectedFile: null,
-  };
-
-  // On file select (from the pop up)
-  onFileChange = (event) => {
-    // Update the state
-    this.setState({ selectedFile: event.target.files[0] });
-  };
-
-  // On file upload (click the upload button)
-  onFileUpload = () => {
-    // Create an object of formData
-    const formData = new FormData();
-
-    // Update the formData object
-    formData.append(
-      "file",
-      this.state.selectedFile,
-      this.state.selectedFile.name
-    );
-    formData.append("username", "");
-    formData.append("file_type", "");
-
-    // Details of the uploaded file
-    console.log(formData);
-    console.log(this.state.selectedFile);
-
-    // Request made to the backend api
-    // Send formData object
-    axios
-      .post(
-        "https://haloship.imediatech.com.vn/imedia/auth/media/upload_file",
-        formData
-      )
-      .then((response) => {
-        console.log(response.data.file_url);
-      });
-  };
-
-  // File content to be displayed after
-  // file upload is complete
-  fileData = () => {
-    if (this.state.selectedFile) {
-      return (
-        <div>
-          <h2>File Details:</h2>
-
-          <p>File Name: {this.state.selectedFile.name}</p>
-
-          <p>File Type: {this.state.selectedFile.type}</p>
-
-          <p>
-            Last Modified:{" "}
-            {this.state.selectedFile.lastModifiedDate.toDateString()}
-          </p>
-        </div>
-      );
-    } else {
-      return (
-        <div>
-          <br />
-          <h4>Choose before Pressing the Upload button</h4>
-        </div>
-      );
-    }
-  };
-
-  render() {
-    return (
-      <div>
-        <h1>GeeksforGeeks</h1>
-        <h3>File Upload using React!</h3>
-        <div>
-          <input type="file" onChange={this.onFileChange} />
-          <button onClick={this.onFileUpload}>Upload!</button>
-        </div>
-        {this.fileData()}
-      </div>
-    );
-  }
+import React from "react";
+import CurrencyInput from "react-currency-input-field";
+export default function test() {
+  return (
+    <div>
+      Hello
+      <CurrencyInput
+        id="input-example"
+        name="input-name"
+        placeholder="Please enter a number"
+        decimalsLimit={2}
+        decimalSeparator="."
+        groupSeparator=","
+        onValueChange={(value, name) => console.log(value, name)}
+      />
+    </div>
+  );
 }
-
-export default App;

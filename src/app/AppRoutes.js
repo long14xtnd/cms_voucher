@@ -14,6 +14,12 @@ const ListVoucherSerial = lazy(() =>
 const CreateVoucherSerial = lazy(() =>
   import("./components/voucherSerial/views/CreateVoucherSerial")
 );
+const listVouchers = lazy(() =>
+  import("./components/voucher/views/listVoucher")
+);
+const listVouchersUsed = lazy(() =>
+  import("./components/voucher/views/listVoucherUsed")
+);
 const test = lazy(() => import("./components/voucherSerial/views/test"));
 
 class AppRoutes extends Component {
@@ -29,6 +35,8 @@ class AppRoutes extends Component {
           <Route path="/materialConversion" component={materialConversion} />
           <Route path="/createVoucherSerial" component={CreateVoucherSerial} />
           <Route path="/test" component={test} />
+          <Route path="/listVouchers" component={listVouchers} />
+          <Route path="/listVouchersUsed" component={listVouchersUsed} />
 
           <Redirect to="/listVoucherSerial" />
         </Switch>

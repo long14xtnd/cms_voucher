@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { connect } from "react-redux";
 import Select from "react-select";
-import { Link, withRouter } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { saveCustomerInfo } from "../../../../store/actions/AuthAction";
 import { Button } from "react-bootstrap";
 import ReactPagination from "react-paginate";
@@ -10,7 +10,7 @@ import {
   listVoucherStatusController,
 } from "../controller/voucherSerialApis";
 
-function ListVoucher(props) {
+function ListVoucherSerial(props) {
   //======================================== CONFIG DATA ===============================================
   const [listVoucherSerial, setListVoucherSerial] = useState([]);
   const [listVoucherStatus, setListVoucherStatus] = useState([]);
@@ -69,6 +69,14 @@ function ListVoucher(props) {
   const handleSearchVoucherSerialStatus = (data) => {
     setRequest({ ...request, voucherStatus: data.value });
   };
+  const searchDataVoucherSerial = async () => {
+    let response = await getListVoucherSerialController(request, header);
+    if (response.data && response.status === 200) {
+      // console.log(response.data);
+      setListVoucherSerial(response.data.listData);
+      setTotalPage(response.data.totalRecord);
+    }
+  };
   //====================================================================================================
 
   //====================================== HANDLE BUTTON ===============================================
@@ -91,7 +99,7 @@ function ListVoucher(props) {
   useEffect(() => {
     axiosGetListVoucherSerial();
     axiosListVoucherStatus();
-  }, [request]);
+  }, []);
 
   return (
     <>
@@ -120,13 +128,13 @@ function ListVoucher(props) {
             </div>
 
             <div className="form-group col-md-3 pdr-menu">
-              {/* <button
+              <button
                 type="button"
                 className="btn btn-primary bth-cancel btn-icon-text"
                 onClick={searchDataVoucherSerial}
               >
                 Tìm kiếm
-              </button> */}
+              </button>
             </div>
 
             <div className="form-group col-md-3 pdl-menu">
@@ -157,9 +165,12 @@ function ListVoucher(props) {
               <thead>
                 <tr>
                   <th className="font-weight-bold" rowSpan="2" width="10%">
+                    Action
+                  </th>
+                  <th className="font-weight-bold" rowSpan="2" width="20%">
                     Tên đợt
                   </th>
-                  <th className="font-weight-bold" rowSpan="2" width="15%">
+                  <th className="font-weight-bold" rowSpan="2" width="5%">
                     Loại
                   </th>
                   <th className="font-weight-bold" rowSpan="2" width="15%">
@@ -171,16 +182,16 @@ function ListVoucher(props) {
                   <th className="font-weight-bold" rowSpan="2" width="15%">
                     Đến ngày
                   </th>
-                  <th className="font-weight-bold" rowSpan="2" width="15%">
+                  <th className="font-weight-bold" rowSpan="2" width="5%">
                     Mệnh giá
                   </th>
-                  <th className="font-weight-bold" rowSpan="2" width="15%">
+                  <th className="font-weight-bold" rowSpan="2" width="5%">
                     Số lượng
                   </th>
-                  <th className="font-weight-bold" rowSpan="2" width="15%">
+                  <th className="font-weight-bold" rowSpan="2" width="3%">
                     Sử dụng
                   </th>
-                  <th className="font-weight-bold" rowSpan="2" width="15%">
+                  <th className="font-weight-bold" rowSpan="2" width="20%">
                     Trạng thái
                   </th>
                 </tr>
@@ -190,9 +201,20 @@ function ListVoucher(props) {
                   listVoucherSerial.map((item, i) => (
                     <tr key={i}>
                       <td>
-                        <Button className="btn btn-primary btn-icon-custom">
-                          <i className="mdi mdi-pen"></i>
-                        </Button>
+                        <Link to={`/createVoucherSerial?copyFromId=${item.id}`}>
+                          <Button className="btn btn-info btn-icon-custom">
+                            {" "}
+                            <i className="mdi mdi-checkbox-multiple-blank-outline"></i>
+                          </Button>
+                        </Link>
+                        <Link to={`/createVoucherSerial?id=${item.id}`}>
+                          <Button className="btn btn-primary btn-icon-custom">
+                            {" "}
+                            <i className="mdi mdi-pen"></i>
+                          </Button>
+                        </Link>
+                      </td>
+                      <td>
                         <Link to={`/createVoucherSerial?id=${item.id}`}>
                           {item.voucherSerialName}
                         </Link>
@@ -255,4 +277,4 @@ const mapDispatchToProps = (dispatch) => {
   };
 };
 
-export default connect(mapStateToProps, mapDispatchToProps)(ListVoucher);
+export default connect(mapStateToProps, mapDispatchToProps)(ListVoucherSerial);

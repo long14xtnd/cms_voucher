@@ -1,4 +1,13 @@
 import axios from "../../../../axios";
+//API Phát hành voucher
+const requestRelaseVoucherSerial = (data, header) => {
+  return axios({
+    url: "/api/request-release",
+    method: "POST",
+    data: data,
+    headers: header,
+  });
+};
 //sửa đợt phát hành
 const editVoucherSerialController = (data, header) => {
   return axios({
@@ -175,4 +184,5 @@ export {
   getListVoucherSerialController,
   getDetailVoucherSerialController,
   editVoucherSerialController,
+  requestRelaseVoucherSerial,
 };
