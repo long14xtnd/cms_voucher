@@ -7,9 +7,11 @@ ul.list-conditional{
 .radio-select{
     display: flex !important;
 }
-button.css-1r4vtzz{
-    /* margin-left: 20px;
-    padding-bottom: 0px;
-    /* padding: 0px; */
-    /* margin-top: -8px;  */
+.btn-close{
+    font-size: 25px;
+    position: absolute;
+    top: 71px;
+    color: red;
+    cursor: pointer;
+   
 }

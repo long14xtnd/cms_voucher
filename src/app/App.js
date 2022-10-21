@@ -27,7 +27,7 @@ class App extends Component {
     let footerComponent = !this.state.isFullPageLayout ? <Footer /> : "";
     return (
       <>
-        {/* {this.props.token ? (
+        {this.props.token ? (
           <div className="container-scroller">
             {navbarComponent}
             <div className="container-fluid page-body-wrapper">
@@ -43,8 +43,9 @@ class App extends Component {
           </div>
         ) : (
           <Login />
-        )} */}
-        <div className="container-scroller">
+        )}
+
+        {/* <div className="container-scroller">
           {navbarComponent}
           <div className="container-fluid page-body-wrapper">
             {sidebarComponent}
@@ -56,7 +57,7 @@ class App extends Component {
               {footerComponent}
             </div>
           </div>
-        </div>
+        </div> */}
       </>
     );
   }

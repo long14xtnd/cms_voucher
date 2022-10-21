@@ -139,6 +139,9 @@ function GetListVoucherUsed(props) {
     useEffect(() => {
         console.log(request);
     }, [request]);
+    useEffect(() => {
+        axiosListVoucherUsed();
+    }, [request.page]);
     const getStatusById = (id) => {
         for (let ss of listStatusVoucher) {
             let statusCode = ss.value + "";

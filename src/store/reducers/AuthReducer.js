@@ -6,13 +6,12 @@ const userInfo = {
     username: "",
   },
 };
-
 export const authReducer = (state = userInfo, action) => {
   switch (action.type) {
     case ActionKeys.AUTH.CUSTOMERINFO:
       return {
         ...state,
-        detail: action.data
+        detail: action.data,
       };
 
     default:

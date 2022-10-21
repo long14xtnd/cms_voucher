@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import { Link, withRouter } from "react-router-dom";
-// import { Collapse } from "react-bootstrap";
+import { Collapse } from "react-bootstrap";
 import { Trans } from "react-i18next";
 
 class Sidebar extends Component {
@@ -59,31 +59,84 @@ class Sidebar extends Component {
         <ul className="nav">
           <li
             className={
-              this.isPathActive("/listVoucher") ? "nav-item active" : "nav-item"
-            }
-          >
-            <Link className="nav-link" to="/listVoucher">
-              <span className="menu-title">
-                <Trans>Quản lý phát hành voucher</Trans>
-              </span>
-              <i className="mdi mdi-home menu-icon"></i>
-            </Link>
-          </li>
-          <li
-            className={
-              this.isPathActive("/listSuppliers")
+              this.isPathActive("/listVoucherSerial")
                 ? "nav-item active"
                 : "nav-item"
             }
           >
-            <Link className="nav-link" to="/listSuppliers">
+            <Link className="nav-link" to="/listVoucherSerial">
               <span className="menu-title">
-                <Trans>Danh sách nhà cung cấp</Trans>
+                <Trans>Danh sách đợt phát hành</Trans>
               </span>
               <i className="mdi mdi-home menu-icon"></i>
             </Link>
           </li>
+          {/* <li
+            className={
+              this.isPathActive("/listVouchers")
+                ? "nav-item active"
+                : "nav-item"
+            }
+          >
+            <Link className="nav-link" to="/listVouchers">
+              <span className="menu-title">
+                <Trans>Danh sách Voucher</Trans>
+              </span>
+              <i className="mdi mdi-home menu-icon"></i>
+            </Link>
+          </li> */}
           <li
+            className={
+              this.isPathActive("/comissions") ? "nav-item active" : "nav-item"
+            }
+          >
+            <div
+              className={
+                this.state.comissionOpen ? "nav-link menu-expanded" : "nav-link"
+              }
+              onClick={() => this.toggleMenuState("comissionOpen")}
+              data-toggle="collapse"
+            >
+              <span className="menu-title">
+                <Trans>Quản lý Voucher</Trans>
+              </span>
+              <i className="menu-arrow"></i>
+              <i className="mdi mdi-cake-layered menu-icon"></i>
+            </div>
+            <Collapse in={this.state.comissionOpen}>
+              <ul className="nav flex-column sub-menu">
+                <li className="nav-item">
+                  {" "}
+                  <Link
+                    className={
+                      this.isPathActive("/listVouchers")
+                        ? "nav-link active"
+                        : "nav-link"
+                    }
+                    to="/listVouchers"
+                  >
+                    <Trans>Danh sách voucher</Trans>
+                    <i className="mdi mdi-cake menu-icon"></i>
+                  </Link>
+                </li>
+                <li className="nav-item">
+                  {" "}
+                  <Link
+                    className={
+                      this.isPathActive("/listVouchersUsed")
+                        ? "nav-link active"
+                        : "nav-link"
+                    }
+                    to="/listVouchersUsed"
+                  >
+                    <Trans>Lịch sử sử dụng voucher</Trans>
+                    <i className="mdi mdi-cake-variant menu-icon"></i>
+                  </Link>
+                </li>
+              </ul>
+            </Collapse>
+          </li>
+          {/* <li
             className={
               this.isPathActive("/listMaterial")
                 ? "nav-item active"
@@ -158,7 +211,7 @@ class Sidebar extends Component {
               </span>
               <i className="mdi mdi-map-marker-radius menu-icon"></i>
             </Link>
-          </li>
+          </li> */}
         </ul>
       </nav>
     );

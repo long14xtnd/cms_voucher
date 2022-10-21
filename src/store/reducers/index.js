@@ -1,12 +1,12 @@
-import { combineReducers } from 'redux';
-import { persistReducer } from 'redux-persist';
-import storage from 'redux-persist/lib/storage';
-import { authReducer } from './AuthReducer';
+import { combineReducers } from "redux";
+import { persistReducer } from "redux-persist";
+import storage from "redux-persist/lib/storage";
+import { authReducer  } from "./AuthReducer";
 
 const authenSetup = {
-  key: 'root',
+  key: "root",
   storage,
-  whitelist: ['detail']
+  whitelist: ["detail"],
 };
 
 const rootReducer = combineReducers({

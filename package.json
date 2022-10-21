@@ -53,6 +53,7 @@
     "react-i18next": "^11.17.0",
     "react-images": "^1.1.7",
     "react-images-upload": "^1.2.8",
+    "react-images-uploading": "^3.1.7",
     "react-input-mask": "^3.0.0-alpha.2",
     "react-jvectormap": "0.0.13",
     "react-loading": "^2.0.3",
@@ -85,6 +86,7 @@
     "rsuite": "^5.17.1",
     "rsuite-daterangepicker": "^3.0.5",
     "sweetalert2-react": "^0.8.3",
+    "universal-cookie": "^4.0.4",
     "validator": "^13.7.0",
     "yup": "^0.32.11"
   },

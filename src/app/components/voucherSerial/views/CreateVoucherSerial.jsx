@@ -11,6 +11,7 @@ import { Store } from "react-notifications-component";
 import { connect } from "react-redux";
 import CurrencyInput from "react-currency-input-field";
 import { saveCustomerInfo } from "../../../../store/actions/AuthAction";
+import { useHistory } from "react-router-dom";
 import "../style/DatePicker.css";
 import "../style/CreateVoucher.css";
 import {
@@ -21,17 +22,30 @@ import {
   listVoucherStatusController,
   listPaymentController,
   listPackageController,
-  listFromProvinceController,
-  listToProvinceController,
   listCodeTypeController,
   listUserController,
   createVoucherSerialController,
   getDetailVoucherSerialController,
   editVoucherSerialController,
   requestRelaseVoucherSerial,
+  getAllProvinceController,
+  getUserDetailController,
 } from "../controller/voucherSerialApis";
 
 function CreateVoucher(props) {
+  //========================================== GET ROLE =================================================
+  let header = {
+    "Content-Type": "application/json",
+    "Access-Control-Allow-Origin": "*",
+    Authorization: props.token,
+  };
+  const [role, setRole] = useState("");
+  // api get role
+  const axiosGetRoleUser = async () => {
+    let response = await getUserDetailController(header);
+    setRole(response.role);
+  };
+
   //======================================== TYPE PAGE =================================================
   const queryParams = new URLSearchParams(window.location.search);
   const id = queryParams.get("id");
@@ -39,11 +53,9 @@ function CreateVoucher(props) {
   let page = id ? "update" : copyFromId ? "copy" : "create";
 
   //======================================== CONFIG DATA ===============================================
-  let header = {
-    "Content-Type": "application/json",
-    "Access-Control-Allow-Origin": "*",
-    Authorization: process.env.REACT_APP_TOKEN,
-  };
+
+  let history = useHistory();
+  const { beforeToday } = DateRangePicker;
   const customStyles = {
     control: (base) => ({
       ...base,
@@ -62,26 +74,11 @@ function CreateVoucher(props) {
             <p className="font-weight-bold">{label}</p>
           </div>
         </div>
-
         <div style={{ display: expanded ? "block" : "none" }}>{children}</div>
       </div>
     );
   };
-  // let GroupHeading = (props) => (
-  //   <div>
-  //     <CheckboxGroupHeading className={[]} {...props} />
-  //     <div width="100%">
-  //       <FontAwesomeIcon
-  //         icon="caret-down"
-  //         className="checkbox-select-group-caret"
-  //       />
-  //     </div>
-  //   </div>
-  // );
-  const currencyFormat = (num) => {
-    return num.toFixed(2).replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1,");
-  };
-  // success danger info default warning
+  // Thông báo : success danger info default warning
   const callNotify = (type, message, time) => {
     Store.addNotification({
       title: "Thông báo",
@@ -97,7 +94,7 @@ function CreateVoucher(props) {
       },
     });
   };
-
+  const animatedComponents = makeAnimated();
   const STATUS_WAIT_APPROVE = 1; //chờ duyệt
   const STATUS_REJECT = 2; //từ chối duyệt
   const STATUS_APPROVED = 3; //đã duyệt
@@ -105,6 +102,7 @@ function CreateVoucher(props) {
   const STATUS_PAUSE = 5; //tạm dừng
   const STATUS_CANCEL = 6; //hủy
   const STATUS_EXPIRED = 7; //đợt phát hành hết hạn
+
   const [listVoucherType, setListVoucherType] = useState([]);
   const [listUser, setListUser] = useState([]);
   const [listServiceApplication, setListServiceApplication] = useState([]);
@@ -113,8 +111,7 @@ function CreateVoucher(props) {
   const [listVoucherStatus, setListVoucherStatus] = useState([]);
   const [listPayment, setListPayment] = useState([]);
   const [listPackage, setListPackage] = useState([]);
-  const [listProvinceCodeFrom, setListProvinceCodeFrom] = useState();
-  const [listProvinceCodeTo, setListProvinceCodeTo] = useState();
+  const [listProvinceCode, setListProvinceCode] = useState([]);
   const [listCodeType, setListCodeType] = useState([]);
   const [validationMsg, setValidationMsg] = useState("");
   const [selectedFile, setSelectedFile] = useState(null);
@@ -125,32 +122,30 @@ function CreateVoucher(props) {
   const [selectedListPackage, setSelectedListPackage] = useState([]);
   const [isSelectedAllPackage, setIsSelectedAllPackage] = useState(true);
   const [isSelectedListProvinceTo, setIsSelectedListProvinceTo] = useState();
+  const [isSelectedListProvinceFrom, setIsSelectedListProvinceFrom] =
+    useState();
   const [selectedDateValue, setSelectedDateValue] = useState();
+  const [voucherTypeValue, setVoucherTypeValue] = useState();
   const [selectedUserId, setSelectedUserId] = useState([]);
   const [isDisableRejectReason, setIsDisableRejectReason] = useState(true);
   const [displayPrefix, setDisplayPrefix] = useState("none");
   const [displayManualCode, setDisplayManualCode] = useState("none");
   const [curentPackageType, setCurentPackageType] = useState("");
   const [currentTypeArea, setCurrentTypeArea] = useState(null);
-  const [role, setRole] = useState("MANAGER");
-  const [isSelectedListProvinceFrom, setIsSelectedListProvinceFrom] =
-    useState();
   var [pkStatus, setPkStatus] = useState("");
   const [isCheckedServiceAppliaction, setCheckedServiceApplication] =
     useState(true);
-  let [isSinglePackage, setIsSinglePackage] = useState(false);
+  let [isSinglePackage, setIsSinglePackage] = useState(true);
   let [disablePkTo, setDisablePkTo] = useState(true);
   let [disablePkFrom, setDisablePkFrom] = useState(true);
   let [checkedTypeArea, setCheckedTypeArea] = useState(true);
   let [showModal, setShowModal] = useState(false);
   let [titleNoti, setTitleNoti] = useState("");
   let [messageNoti, setMessageNoti] = useState("");
-
   const [dataRequestReleaseVoucherSerial, setDataRequestReleaseVoucherSerial] =
     useState({
       id: parseInt(id),
     });
-
   const [data, setData] = useState({
     voucherSerialName: "",
     voucherType: 1,
@@ -160,7 +155,7 @@ function CreateVoucher(props) {
     content: "",
     desc: "",
     image: "",
-    discountForm: 1,
+    discountForm: 2,
     vouchcerServiceApplication: 1,
     discountType: 1,
     packages: ["ALL"],
@@ -170,10 +165,8 @@ function CreateVoucher(props) {
     provinceCodeFrom: [],
     provinceCodeTo: [],
     ishared: 1,
-    usage_limit: 1,
-    personalUsageLimit: 1,
     status: 1,
-    paymentMethod: [],
+    paymentMethod: ["2"], //mặc định pttt là ví hola
     minValueCodition: null,
     fromDateCondition: "2022-11-03",
     toDateCondition: "2022-12-03",
@@ -189,6 +182,9 @@ function CreateVoucher(props) {
     manualCode: "",
     packageUserCondition: [],
     userPhone: [],
+    amountVoucher: 1,
+    serialUsageLimit: 1,
+    voucherUsageLimit: 1,
   });
   const [disable, setDisable] = useState({
     voucherSerialName: false,
@@ -209,8 +205,6 @@ function CreateVoucher(props) {
     provinceCodeFrom: false,
     provinceCodeTo: false,
     ishared: false,
-    usage_limit: false,
-    personalUsageLimit: false,
     status: null,
     paymentMethod: false,
     minValueCodition: false,
@@ -228,51 +222,51 @@ function CreateVoucher(props) {
     manualCode: false,
     packageUserCondition: false,
     userPhone: false,
+    amountVoucher: false,
+    serialUsageLimit: false,
+    voucherUsageLimit: false,
   });
+  //Xóa ảnh
+  const removeImage = (e) => {
+    setData({
+      ...data,
+      image: "",
+    });
+    setUrlImage("");
+  };
   // File select
   const onFileChange = (event) => {
     setSelectedFile(event.target.files[0]);
   };
-  // File upload
-  const onFileUpload = (e) => {
-    e.preventDefault();
-    // Create an object of formData
-    const formData = new FormData();
-
-    // Update the formData object
-    formData.append("file", selectedFile, selectedFile.name);
-    formData.append("username", "");
-    formData.append("file_type", "");
-    // Details of the uploaded file
-    // Request made to the backend api
-    // Send formData object
-    axios
-      .post(
-        "https://haloship.imediatech.com.vn/imedia/auth/media/upload_file",
-        formData
-      )
-      .then((response) => {
-        setData({ ...data, image: response.data.file_url });
-        setUrlImage(
-          "https://haloship.imediatech.com.vn/" + response.data.file_url
-        );
-      });
-  };
-  //Xử lý upload ảnh
+  // Hiển thị ảnh upload
   const fileData = () => {
     if (urlImage) {
       return (
         <div>
-          <h2>File Details:</h2>
+          <h4>File Details:</h4>
           <img src={urlImage} width="120px" height="auto" />
+          <button>
+            {" "}
+            <i
+              className="mdi mdi-window-close btn-close"
+              onClick={removeImage}
+            ></i>
+          </button>
         </div>
       );
     } else if (data.image != null && data.image.length > 0) {
       let imgUploaded = "https://haloship.imediatech.com.vn/" + data.image;
       return (
         <div>
-          <h2>Ảnh đã upload</h2>
+          <h4>Ảnh đã upload</h4>
           <img src={imgUploaded} width="120px" height="auto" />
+          <button>
+            {" "}
+            <i
+              className="mdi mdi-window-close btn-close"
+              onClick={removeImage}
+            ></i>
+          </button>
         </div>
       );
     } else if (data.image === "" || data.image == null) {
@@ -292,6 +286,7 @@ function CreateVoucher(props) {
       rejectReason: event.target.value,
     });
   };
+  //định dạng ngày-tháng-năm
   const formatDate = (date) => {
     var d = new Date(date),
       month = "" + (d.getMonth() + 1),
@@ -301,6 +296,7 @@ function CreateVoucher(props) {
     if (day.length < 2) day = "0" + day;
     return [year, month, day].join("-");
   };
+  //onchange chọn ngày
   const selectDate = (selectedDate) => {
     if (selectedDate != null) {
       setData({
@@ -316,31 +312,33 @@ function CreateVoucher(props) {
       });
     }
   };
+  //onchange tiêu chí áp dụng mã
   const selectUserTypeCond = (selectedUserTypeCond) => {
     setData({
       ...data,
       userTypeCodition: parseInt(selectedUserTypeCond.target.value),
     });
   };
+  //đóng modal thông báo
   const closeModalNoti = () => {
     setShowModal((showModal = false));
   };
-
+  //mở modal thông báo
   const openModalNoti = (titleNoti, messageNoti) => {
     setShowModal((showModal = true));
     setTitleNoti((titleNoti = titleNoti));
     setMessageNoti((messageNoti = messageNoti));
   };
-  const animatedComponents = makeAnimated();
-
-  const [voucherTypeValue, setVoucherTypeValue] = useState();
+  //onchange loại mã (voucher/e-coupon)
   const selectVoucherType = (selectedVoucherType) => {
     setData({ ...data, voucherType: selectedVoucherType.value });
     setVoucherTypeValue(selectedVoucherType.value);
   };
+  //onchange hình thức
   const selectDiscountForm = (selectedDiscountForm) => {
     setData({ ...data, discountForm: selectedDiscountForm.value });
   };
+  //onchange dịch vụ áp dụng
   const selectServiceApplication = (selectServiceApplication) => {
     setCheckedServiceApplication(false);
     setData({
@@ -350,26 +348,24 @@ function CreateVoucher(props) {
       ),
     });
   };
-
+  //onchange phương thức thanh toán
   const selectedPaymentMethod = (event) => {
     var methodList = data.paymentMethod;
     if (event.target.checked) {
       // Them payment method vao mang
-      // methodList.push(event.target.value);
       if (methodList.indexOf(event.target.value) == -1) {
         methodList.push(event.target.value);
       }
     } else {
       // Loai payment method khoi mang
       methodList.splice(methodList.indexOf(event.target.value), 1);
-      // methodList.pop(event.target.value);
     }
-
     setData({
       ...data,
       paymentMethod: methodList,
     });
   };
+  //onchange trạng thái đợt phát hành
   const selectStatus = (selectedStatus) => {
     if (selectedStatus.target.value == 6) {
       openModalNoti(
@@ -393,6 +389,7 @@ function CreateVoucher(props) {
       discountType: parseInt(selectedDiscountType.target.value),
     });
   };
+  //onchange phạm vi áp dụng mã
   const selectTypeArea = (selectedTypeArea) => {
     setData({
       ...data,
@@ -404,12 +401,12 @@ function CreateVoucher(props) {
     } else {
       setCheckedTypeArea(true);
     }
-
     setData({
       ...data,
       typeArea: parseInt(selectedTypeArea.target.value),
     });
   };
+  //onchange cấu trúc mã voucher
   const selectTypeCode = (selectedTypeCode) => {
     if (selectedTypeCode.target.value == 1) {
       setDisplayManualCode("none");
@@ -428,24 +425,28 @@ function CreateVoucher(props) {
       typeCode: parseInt(selectedTypeCode.target.value),
     });
   };
-
+  //onchange gói cước
   const onChangeSelectPackage = (event) => {
     if (event.length === 1) {
       // Call get province list api for single package
-
       const packageCode = event[0].code;
-      axiosGetListPackageFromProvince(packageCode);
-      axiosGetListPackageToProvince(packageCode);
       setIsSinglePackage((isSinglePackage = false));
       setData({ ...data, packages: [event[0].code] });
+    } else if (event.length == 0) {
+      setData({
+        ...data,
+        packages: [],
+      });
     } else if (event.length > 1) {
-      // setDisablePkFrom(true);
-      // setDisablePkTo(true);
+      setDisablePkFrom(true); //chọn trên > 1 gói cước disable theo khu vực gửi
+      setDisablePkTo(true); //chọn trên > 1 gói cước disable theo khu vực giao
       setCheckedTypeArea((checkedTypeArea = true));
-      openModalNoti(
-        "Lỗi !",
-        "Không thể lựa chọn nhiều gói cước với khu vực áp dụng xác định, chọn khu vực áp dụng Toàn hệ thống để lựa chọn thêm gói cước khác"
-      );
+      if (data.typeArea != 0) {
+        openModalNoti(
+          "Lỗi !",
+          "Không thể lựa chọn nhiều gói cước với khu vực áp dụng xác định, chọn khu vực áp dụng Toàn hệ thống để lựa chọn thêm gói cước khác"
+        );
+      }
       setIsSinglePackage((isSinglePackage = true));
       let selecttedPackage = [];
       event.map(
@@ -455,16 +456,22 @@ function CreateVoucher(props) {
         ...data,
         packages: selecttedPackage,
       });
+
       setSelectedListPackage(event);
     } else {
       setData({
         ...data,
         packages: [],
       });
+      setData({
+        ...data,
+        typeArea: 0,
+      });
     }
   };
   var listProvinceTo = [];
   var listProvinceFrom = [];
+  //onchange gói cước theo khu vực giao
   const selectProvinceTo = (selectedProvince) => {
     if (selectedProvince.length === 1) {
       setData({ ...data, provinceCodeTo: [selectedProvince[0].code] });
@@ -484,6 +491,7 @@ function CreateVoucher(props) {
       setData({ ...data, provinceCodeTo: [] });
     }
   };
+  //onchange gói cước theo khu vực gửi
   const selectProvinceFrom = (selectedProvince) => {
     if (selectedProvince.length === 1) {
       setData({ ...data, provinceCodeFrom: [selectedProvince[0].code] });
@@ -503,12 +511,13 @@ function CreateVoucher(props) {
       setData({ ...data, provinceCodeFrom: [] });
     }
   };
+  //onchange số điện thoại của người dùng
   const onChagePhoneNumber = (event) => {
     let phone = parseInt(event.target.value);
-
     //Call API get all user
     axiosListUser(phone, header);
   };
+  //onchange select user
   const selectUserId = (selectedUserPhone) => {
     var listSelectedUsersId = [];
     if (!selectedUserPhone) {
@@ -520,9 +529,9 @@ function CreateVoucher(props) {
         (item) => (listSelectedUsersId = [...listSelectedUsersId, item.value])
       );
     }
-
     setData({ ...data, userPhone: listSelectedUsersId });
   };
+  //onchange gói cước theo điều kiện
   const selectPackageUserCondition = (selectedPackageUserCondition) => {
     if (selectedPackageUserCondition.length === 1) {
       setData({
@@ -546,6 +555,7 @@ function CreateVoucher(props) {
       });
     }
   };
+  //trả về cấu trúc html dựa theo loại voucher/e-coupon
   const voucherTypeHtml = () => {
     switch (voucherTypeValue || data.voucherType) {
       case 1:
@@ -562,7 +572,10 @@ function CreateVoucher(props) {
               decimalSeparator="."
               groupSeparator=","
               onValueChange={(value) =>
-                setData({ ...data, voucherValue: parseInt(value) })
+                setData({
+                  ...data,
+                  voucherValue: value ? parseInt(value) : value,
+                })
               }
               value={data.voucherValue}
               disabled={disable.voucherValue}
@@ -581,6 +594,7 @@ function CreateVoucher(props) {
                 type="number"
                 className="form-control"
                 placeholder="10"
+                max="100"
                 onChange={(e) =>
                   setData({ ...data, voucherValue: parseInt(e.target.value) })
                 }
@@ -600,7 +614,7 @@ function CreateVoucher(props) {
                       type="radio"
                       className="form-check-input"
                       name="ExampleRadio4"
-                      checked
+                      defaultChecked
                       disabled={disable.maxValue}
                     />{" "}
                     Dưới (VNĐ)
@@ -615,7 +629,10 @@ function CreateVoucher(props) {
                     decimalSeparator="."
                     groupSeparator=","
                     onValueChange={(value) =>
-                      setData({ ...data, maxValue: parseInt(value) })
+                      setData({
+                        ...data,
+                        maxValue: value ? parseInt(value) : value,
+                      })
                     }
                     value={data.maxValue}
                     disabled={disable.maxValue}
@@ -630,38 +647,41 @@ function CreateVoucher(props) {
         return <></>;
     }
   };
-
+  //onchange loại mã
   const [codeTypeValue, setCodeTypeValue] = useState();
   const selectCodeType = (selectedCodeType) => {
     setData({ ...data, ishared: selectedCodeType.value });
     setCodeTypeValue(selectedCodeType.value);
   };
-
+  //trả về cấu trúc html dựa theo loại mã
   const codeTypeHtml = () => {
     switch (codeTypeValue || data.ishared) {
       case 1:
         return (
           <>
-            <div className="form-group col-md-4 pdr-menu">
+            <div className="form-group   pdr-menu">
               <label htmlFor="exampleInputName1" className="font-weight-bold">
-                Số lần sử dụng tối đa (*)
+                Số lần sử dụng tối đa của đợt phát hành(*)
               </label>
               <input
                 type="number"
                 className="form-control"
                 placeholder="100"
                 onChange={(e) =>
-                  setData({ ...data, usage_limit: parseInt(e.target.value) })
+                  setData({
+                    ...data,
+                    serialUsageLimit: parseInt(e.target.value),
+                  })
                 }
-                value={data.usage_limit}
-                disabled={disable.usage_limit}
+                value={data.serialUsageLimit}
+                disabled={disable.serialUsageLimit}
                 min="1"
               />
-              <p className="text-danger">{validationMsg.usage_limit1}</p>
+              <p className="text-danger">{validationMsg.serialUsageLimit}</p>
             </div>
-            <div className="form-group col-md-4 pdr-menu">
+            {/* <div className="form-group col-md-4 pdr-menu">
               <label htmlFor="exampleInputName1" className="font-weight-bold">
-                Số lượng tối đa cho 1 user (*)
+                Số lượng tối đa cho 1 voucher (*)
               </label>
               <input
                 type="number"
@@ -671,22 +691,22 @@ function CreateVoucher(props) {
                 onChange={(e) =>
                   setData({
                     ...data,
-                    personalUsageLimit: parseInt(e.target.value),
+                    voucherUsageLimit: parseInt(e.target.value),
                   })
                 }
-                value={data.personalUsageLimit}
-                disabled={disable.personalUsageLimit}
+                value={data.voucherUsageLimit}
+                disabled={disable.voucherUsageLimit}
               />
-              <p className="text-danger">{validationMsg.personalUsageLimit1}</p>
-            </div>
+              <p className="text-danger">{validationMsg.voucherUsageLimit1}</p>
+            </div> */}
           </>
         );
       case 2:
         return (
           <>
-            <div className="form-group col-md-3 pdr-menu">
+            <div className="form-group col-md-4 p-0">
               <label htmlFor="exampleInputName1" className="font-weight-bold">
-                Nhập số lượng mã (*)
+                Nhập số lượng voucher (*)
               </label>
               <input
                 type="number"
@@ -694,38 +714,33 @@ function CreateVoucher(props) {
                 className="form-control"
                 placeholder="100"
                 onChange={(e) =>
-                  setData({ ...data, usage_limit: parseInt(e.target.value) })
+                  setData({ ...data, amountVoucher: parseInt(e.target.value) })
                 }
-                value={data.usage_limit}
-                disabled={disable.usage_limit}
+                value={data.amountVoucher}
+                disabled={disable.amountVoucher}
               />
-              <p className="text-danger">{validationMsg.usage_limit2}</p>
+              <p className="text-danger">{validationMsg.amountVoucher}</p>
             </div>
-            <div className="form-group col-md-6 pdr-menu">
+            <div className="form-group col-md-3 pl-2">
               <label htmlFor="exampleInputName1" className="font-weight-bold">
                 Số lần sử dụng 1 mã(*)
               </label>
-              <div className="row">
-                <div className="form-group col-md-4 pdr-menu">
-                  <input
-                    type="number"
-                    min="1"
-                    className="form-control"
-                    placeholder="1"
-                    onChange={(e) =>
-                      setData({
-                        ...data,
-                        personalUsageLimit: parseInt(e.target.value),
-                      })
-                    }
-                    value={data.personalUsageLimit}
-                    disabled={disable.personalUsageLimit}
-                  />
-                  <p className="text-danger">
-                    {validationMsg.personalUsageLimit2}
-                  </p>
-                </div>
-              </div>
+
+              <input
+                type="number"
+                min="1"
+                className="form-control"
+                placeholder="1"
+                onChange={(e) =>
+                  setData({
+                    ...data,
+                    voucherUsageLimit: parseInt(e.target.value),
+                  })
+                }
+                value={data.voucherUsageLimit}
+                disabled={disable.voucherUsageLimit}
+              />
+              <p className="text-danger">{validationMsg.voucherUsageLimit2}</p>
             </div>
           </>
         );
@@ -733,7 +748,7 @@ function CreateVoucher(props) {
         return (
           <>
             <div
-              className="form-group col-md-8 pdr-menu"
+              className="form-group col-sm-7 pdr-menu"
               onChange={onChagePhoneNumber}
             >
               <label htmlFor="exampleInputName1" className="font-weight-bold">
@@ -757,6 +772,7 @@ function CreateVoucher(props) {
         return <></>;
     }
   };
+  //Trả về cấu trúc html của các nút điều khiển theo trang,role,trạng thái đợt phát hành
   const actionHtml = () => {
     const backHtml = () => {
       return (
@@ -803,7 +819,7 @@ function CreateVoucher(props) {
           return (
             <>
               {backHtml()}
-              {updatehtml()}
+              {/* {updatehtml()} */}
             </>
           );
         } else {
@@ -1015,7 +1031,7 @@ function CreateVoucher(props) {
               return (
                 <>
                   {backHtml()}
-                  {updatehtml()}
+                  {/* {updatehtml()} */}
                 </>
               );
             }
@@ -1038,7 +1054,7 @@ function CreateVoucher(props) {
         return <></>;
     }
   };
-
+  //trả về cấu trúc html của phần cấu trúc mã voucher dựa theo giá trị của loại mã
   const codestructureHtml = () => {
     switch (codeTypeValue || data.ishared) {
       case 1:
@@ -1085,7 +1101,12 @@ function CreateVoucher(props) {
                   className="form-control col-md-2"
                   placeholder="ABCD"
                   onChange={(e) =>
-                    setData({ ...data, prefix: e.target.value.toUpperCase() })
+                    setData({
+                      ...data,
+                      prefix: e.target.value
+                        .toUpperCase()
+                        .replace(/[^\w\s]/gi, ""),
+                    })
                   }
                   value={data.prefix}
                   disabled={disable.prefix}
@@ -1121,7 +1142,9 @@ function CreateVoucher(props) {
                   onChange={(e) =>
                     setData({
                       ...data,
-                      manualCode: e.target.value.toUpperCase(),
+                      manualCode: e.target.value
+                        .toUpperCase()
+                        .replace(/[^\w\s]/gi, ""),
                     })
                   }
                   value={data.manualCode}
@@ -1179,7 +1202,12 @@ function CreateVoucher(props) {
                   className="form-control col-md-2"
                   placeholder="XYZT"
                   onChange={(e) =>
-                    setData({ ...data, prefix: e.target.value.toUpperCase() })
+                    setData({
+                      ...data,
+                      prefix: e.target.value
+                        .toUpperCase()
+                        .replace(/[^\w\s]/gi, ""),
+                    })
                   }
                   value={data.prefix}
                   disabled={disable.prefix}
@@ -1236,7 +1264,12 @@ function CreateVoucher(props) {
                   className="form-control col-md-2"
                   placeholder="XYZT"
                   onChange={(e) =>
-                    setData({ ...data, prefix: e.target.value.toUpperCase() })
+                    setData({
+                      ...data,
+                      prefix: e.target.value
+                        .toUpperCase()
+                        .replace(/[^\w\s]/gi, ""),
+                    })
                   }
                   value={data.prefix}
                   disabled={disable.prefix}
@@ -1250,13 +1283,13 @@ function CreateVoucher(props) {
         return <></>;
     }
   };
-  //show hide tiêu chí áp dụng mã có điều kiện và ko có điều kiện
+  // ẩn/hiện tiêu chí áp dụng mã có điều kiện và ko có điều kiện
   const showListConditional = () => {
     var yesConditional = document.getElementById("yesConditional");
     var listConditional = document.getElementById("listConditional");
     listConditional.style.display = yesConditional.checked ? "block" : "none";
   };
-  //show/hide gói cước
+  // ẩn/hiện select gói cước
   const showListPackage = (e) => {
     setPkStatus((pkStatus = e.target.value));
     setCurentPackageType(e.target.value);
@@ -1268,6 +1301,7 @@ function CreateVoucher(props) {
     multi_select.style.display = pk.checked ? "block" : "none";
     setCheckedTypeArea((checkedTypeArea = true));
   };
+  // disable phạm vi áp dụng mã theo khu vực giao và khu vực gửi
   const disableByArea = (e) => {
     let pkTo = document.getElementById("pkTo");
     let pkFrom = document.getElementById("pkFrom");
@@ -1276,6 +1310,7 @@ function CreateVoucher(props) {
     setCheckedTypeArea((checkedTypeArea = true));
     setIsSelectedAllPackage(true);
   };
+  // undisable phạm vi áp dụng mã theo khu vực giao và khu vực gửi
   const unDisableByArea = (e) => {
     let pkTo = document.getElementById("pkTo");
     let pkFrom = document.getElementById("pkFrom");
@@ -1285,16 +1320,7 @@ function CreateVoucher(props) {
     setCheckedTypeArea((checkedTypeArea = true));
     setIsSelectedAllPackage(false);
   };
-
-  const onClickSetTypeAreaTo = () => {
-    setDisablePkTo(false);
-    setDisablePkFrom(true);
-    let multiCheckedTo = document.getElementById("typeArePKTo");
-    multiCheckedTo.style.display = "block";
-    let multiCheckedFrom = document.getElementById("typeArePKFrom");
-    multiCheckedFrom.style.display = "none";
-    //click khu vực giao,set data cho provineCodeFrom thành []
-  };
+  //disable/undisable multiselect tỉnh thành của khu vực giao/khu vực gửi
   const onClickSetAllArea = () => {
     setDisablePkTo(true);
     setDisablePkFrom(true);
@@ -1302,8 +1328,17 @@ function CreateVoucher(props) {
     multiCheckedTo.style.display = "none";
     let multiCheckedFrom = document.getElementById("typeArePKFrom");
     multiCheckedFrom.style.display = "none";
-    //click khu vực giao,set data cho provineCodeFrom thành []
   };
+  //disable/undisable multiselect tỉnh thành theo của vực giao/khu vực gửi
+  const onClickSetTypeAreaTo = () => {
+    setDisablePkTo(false);
+    setDisablePkFrom(true);
+    let multiCheckedTo = document.getElementById("typeArePKTo");
+    multiCheckedTo.style.display = "block";
+    let multiCheckedFrom = document.getElementById("typeArePKFrom");
+    multiCheckedFrom.style.display = "none";
+  };
+  //disable/undisable multiselect tỉnh thành của khu vực giao/khu vực gửi
   const onClickSetTypeAreaFrom = () => {
     setDisablePkTo(true);
     setDisablePkFrom(false);
@@ -1324,11 +1359,7 @@ function CreateVoucher(props) {
       //ĐỢT PHÁT HÀNH HẾT HẠN
       let curdate = new Date().toJSON().slice(0, 10);
       if (curdate > data.endAt) {
-        if (role == "ADMIN") {
-          disableStatus = false;
-        } else {
-          disableStatus = true;
-        }
+        disableStatus = true;
       } else {
         //ĐỢT PHÁT HÀNH CÒN HẠN
         switch (disable.status) {
@@ -1415,15 +1446,7 @@ function CreateVoucher(props) {
             }
             break;
           case 6:
-            //Trạng thái hủy không thể thay đổi gì
-            if (role == "SALE" || role == "MANAGER" || role == "DOISOAT") {
-              disableStatus = true;
-            }
-            //ADMIN
-            if (role == "ADMIN") {
-              disableStatus = false;
-            }
-            // disableStatus = true;
+            disableStatus = true;
             break;
           default:
             break;
@@ -1438,48 +1461,49 @@ function CreateVoucher(props) {
     //ĐỢT PHÁT HÀNH HẾT HẠN
     let curdate = new Date().toJSON().slice(0, 10);
     if (curdate > dataEndAt) {
-      if (role != "ADMIN") {
-        setDisable({
-          ...disable,
-          voucherSerialName: true,
-          voucherType: true,
-          voucherValue: true,
-          title: true,
-          shortName: true,
-          content: true,
-          desc: true,
-          image: true,
-          discountForm: true,
-          vouchcerServiceApplication: true,
-          discountType: true,
-          packages: true,
-          startAt: true,
-          endAt: true,
-          typeArea: true,
-          provinceCodeFrom: true,
-          provinceCodeTo: true,
-          ishared: true,
-          usage_limit: true,
-          personalUsageLimit: true,
-          status: STATUS_EXPIRED,
-          paymentMethod: true,
-          minValueCodition: true,
-          fromDateCondition: true,
-          toDateCondition: true,
-          userTypeCodition: true,
-          sexCondition: true,
-          fromAge: true,
-          toAge: true,
-          maxValue: true,
-          baseOnCondition: true,
-          durationDayCondition: true,
-          prefix: true,
-          typeCode: true,
-          manualCode: true,
-          packageUserCondition: true,
-          userPhone: true,
-        });
-      }
+      setDisable({
+        ...disable,
+        voucherSerialName: true,
+        voucherType: true,
+        voucherValue: true,
+        title: true,
+        shortName: true,
+        content: true,
+        desc: true,
+        image: true,
+        discountForm: true,
+        vouchcerServiceApplication: true,
+        discountType: true,
+        packages: true,
+        startAt: true,
+        endAt: true,
+        typeArea: true,
+        provinceCodeFrom: true,
+        provinceCodeTo: true,
+        ishared: true,
+        usage_limit: true,
+        personalUsageLimit: true,
+        status: STATUS_EXPIRED,
+        paymentMethod: true,
+        minValueCodition: true,
+        fromDateCondition: true,
+        toDateCondition: true,
+        userTypeCodition: true,
+        sexCondition: true,
+        fromAge: true,
+        toAge: true,
+        maxValue: true,
+        baseOnCondition: true,
+        durationDayCondition: true,
+        prefix: true,
+        typeCode: true,
+        manualCode: true,
+        packageUserCondition: true,
+        userPhone: true,
+        amountVoucher: true,
+        serialUsageLimit: true,
+        voucherUsageLimit: true,
+      });
     }
     if (curdate < dataEndAt) {
       //ĐỢT PHÁT HÀNH CÒN HẠN
@@ -1526,6 +1550,9 @@ function CreateVoucher(props) {
               manualCode: true,
               packageUserCondition: true,
               userPhone: true,
+              amountVoucher: true,
+              serialUsageLimit: true,
+              voucherUsageLimit: true,
             });
           }
           break;
@@ -1571,6 +1598,9 @@ function CreateVoucher(props) {
               manualCode: true,
               packageUserCondition: true,
               userPhone: true,
+              amountVoucher: true,
+              serialUsageLimit: true,
+              voucherUsageLimit: true,
             });
           }
           break;
@@ -1610,6 +1640,9 @@ function CreateVoucher(props) {
               packageUserCondition: true,
               userPhone: true,
               status: STATUS_APPROVED,
+              amountVoucher: true,
+              serialUsageLimit: true,
+              voucherUsageLimit: true,
             });
           }
           if (role == "DOISOAT") {
@@ -1652,6 +1685,9 @@ function CreateVoucher(props) {
               manualCode: true,
               packageUserCondition: true,
               userPhone: true,
+              amountVoucher: true,
+              serialUsageLimit: true,
+              voucherUsageLimit: true,
             });
           }
 
@@ -1692,6 +1728,9 @@ function CreateVoucher(props) {
               packageUserCondition: true,
               userPhone: true,
               status: STATUS_PUBLISHED,
+              amountVoucher: true,
+              serialUsageLimit: true,
+              voucherUsageLimit: true,
             });
           }
           if (role == "DOISOAT") {
@@ -1734,6 +1773,9 @@ function CreateVoucher(props) {
               manualCode: true,
               packageUserCondition: true,
               userPhone: true,
+              amountVoucher: true,
+              serialUsageLimit: true,
+              voucherUsageLimit: true,
             });
           }
           break;
@@ -1779,54 +1821,58 @@ function CreateVoucher(props) {
               packageUserCondition: true,
               userPhone: true,
               status: STATUS_PAUSE,
+              amountVoucher: true,
+              serialUsageLimit: true,
+              voucherUsageLimit: true,
             });
           }
 
           break;
         case 6:
           //hủy Không thể thay đổi
-          if (role != "ADMIN") {
-            setDisable({
-              // ...disable,
-              voucherSerialName: true,
-              voucherType: true,
-              voucherValue: true,
-              title: true,
-              shortName: true,
-              content: true,
-              desc: true,
-              image: true,
-              discountForm: true,
-              vouchcerServiceApplication: true,
-              discountType: true,
-              packages: true,
-              startAt: true,
-              endAt: true,
-              typeArea: true,
-              provinceCodeFrom: true,
-              provinceCodeTo: true,
-              ishared: true,
-              usage_limit: true,
-              personalUsageLimit: true,
-              status: STATUS_CANCEL,
-              paymentMethod: true,
-              minValueCodition: true,
-              fromDateCondition: true,
-              toDateCondition: true,
-              userTypeCodition: true,
-              sexCondition: true,
-              fromAge: true,
-              toAge: true,
-              maxValue: true,
-              baseOnCondition: true,
-              durationDayCondition: true,
-              prefix: true,
-              typeCode: true,
-              manualCode: true,
-              packageUserCondition: true,
-              userPhone: true,
-            });
-          }
+          setDisable({
+            ...disable,
+            voucherSerialName: true,
+            voucherType: true,
+            voucherValue: true,
+            title: true,
+            shortName: true,
+            content: true,
+            desc: true,
+            image: true,
+            discountForm: true,
+            vouchcerServiceApplication: true,
+            discountType: true,
+            packages: true,
+            startAt: true,
+            endAt: true,
+            typeArea: true,
+            provinceCodeFrom: true,
+            provinceCodeTo: true,
+            ishared: true,
+            usage_limit: true,
+            personalUsageLimit: true,
+            status: STATUS_CANCEL,
+            paymentMethod: true,
+            minValueCodition: true,
+            fromDateCondition: true,
+            toDateCondition: true,
+            userTypeCodition: true,
+            sexCondition: true,
+            fromAge: true,
+            toAge: true,
+            maxValue: true,
+            baseOnCondition: true,
+            durationDayCondition: true,
+            prefix: true,
+            typeCode: true,
+            manualCode: true,
+            packageUserCondition: true,
+            userPhone: true,
+            amountVoucher: true,
+            serialUsageLimit: true,
+            voucherUsageLimit: true,
+          });
           break;
         default:
           break;
@@ -1837,7 +1883,7 @@ function CreateVoucher(props) {
 
   //================================== CALL API ===================================
 
-  //API DETAIL VOUCHER_SERIAL
+  //api detail voucher_serial
   const axiosGetDetailVoucherSerial = async () => {
     let voucherSerialId = id ? id : copyFromId;
     if (!voucherSerialId) {
@@ -1848,7 +1894,7 @@ function CreateVoucher(props) {
       header
     );
     if (response.data && response.status === 200) {
-      console.log(response.data);
+      console.log("data detail", response.data);
       let listUserPhone = [];
       response.data.serialUserMaps.map((item) =>
         listUserPhone.push(item.phone)
@@ -1906,17 +1952,14 @@ function CreateVoucher(props) {
           // Call get province list api for single package
           const packageCode =
             response.data.objectCondition.shipPackages.split(",")[0];
-          axiosGetListPackageFromProvince(packageCode);
-          axiosGetListPackageToProvince(packageCode);
+          // axiosGetListPackageFromProvince(packageCode);
+          //CALL API PROVINCECODE
+          // axiosGetListPackageToProvince(packageCode);
           // setIsSinglePackage((isSinglePackage = false));
         }
       }
       //====================MÀN SỬA===================
       if ((voucherSerialId = id)) {
-        //chỗ này sau này sẽ là role trả về
-        // setRole(response.data.userDetails.role);
-
-        // setDataEndAt(response.data.voucherSerial.endAt);
         setData({
           ...data,
           voucherSerialName: response.data.voucherSerial.name,
@@ -1941,14 +1984,17 @@ function CreateVoucher(props) {
           provinceCodeFrom:
             response.data.areaCondition.provinceCodes.split(","),
           ishared: response.data.voucherSerial.isShared,
-          usage_limit: response.data.voucherSerial.usageLimit,
-          personalUsageLimit: response.data.voucherSerial.personalUsageLimit,
+          voucherUsageLimit: response.data.voucherSerial.voucherUsageLimit,
+          serialUsageLimit: response.data.voucherSerial.serialUsageLimit,
+          amountVoucher:
+            response.data.voucherSerial.serialUsageLimit /
+            response.data.voucherSerial.voucherUsageLimit,
           status: response.data.voucherSerial.status,
           paymentMethod: response.data.condition.paymentMethod.split(","),
           minValueCodition: response.data.valueCondition.minValue,
           fromDateCondition: response.data.valueCondition.fromDate,
           toDateCondition: response.data.valueCondition.toDate,
-          userTypeCodition: 0,
+          userTypeCodition: response.data.userCondition.type,
           sexCondition: response.data.userCondition.sex,
           fromAge: response.data.userCondition.fromAge,
           toAge: response.data.userCondition.toAge,
@@ -1985,6 +2031,11 @@ function CreateVoucher(props) {
         if (response.data.voucherSerial.status == 2 || role == "ADMIN") {
           setIsDisableRejectReason(false);
         }
+        setIsSinglePackage(false);
+        // if (page != id || page != copyFromId) {
+        //   //nếu là màn create và copy thì chỉ được chọn trạng thái là chờ duyệt,các trạng thái khác bị disable
+        //   setIsSinglePackage(true);
+        // }
       }
       //==================END MÀN SỬA===============
 
@@ -2014,14 +2065,17 @@ function CreateVoucher(props) {
           provinceCodeFrom:
             response.data.areaCondition.provinceCodes.split(","),
           ishared: response.data.voucherSerial.isShared,
-          usage_limit: response.data.voucherSerial.usageLimit,
-          personalUsageLimit: response.data.voucherSerial.personalUsageLimit,
+          voucherUsageLimit: response.data.voucherSerial.voucherUsageLimit,
+          serialUsageLimit: response.data.voucherSerial.serialUsageLimit,
+          amountVoucher:
+            response.data.voucherSerial.serialUsageLimit /
+            response.data.voucherSerial.voucherUsageLimit,
           status: 1,
           paymentMethod: response.data.condition.paymentMethod.split(","),
           minValueCodition: response.data.valueCondition.minValue,
           fromDateCondition: response.data.valueCondition.fromDate,
           toDateCondition: response.data.valueCondition.toDate,
-          userTypeCodition: 0,
+          userTypeCodition: response.data.userCondition.type,
           sexCondition: response.data.userCondition.sex,
           fromAge: response.data.userCondition.fromAge,
           toAge: response.data.userCondition.toAge,
@@ -2045,11 +2099,13 @@ function CreateVoucher(props) {
           rejectReason: "",
           voucherSerialId: parseInt(id),
         });
+        setIsSinglePackage(false);
       }
     } else {
       callNotify("danger", response.message, 3000);
     }
   };
+  //api danh sách loại mã (voucher/coupon)
   const axiosListVoucherType = async () => {
     let response = await listVoucherTypeController(header);
     if (response.data && response.status === 200) {
@@ -2060,6 +2116,7 @@ function CreateVoucher(props) {
       setListVoucherType(result);
     }
   };
+  //api danh sách người dùng
   const axiosListUser = async (data) => {
     let result = [];
     let response = await listUserController(data, header);
@@ -2070,13 +2127,14 @@ function CreateVoucher(props) {
       setListUser(result);
     }
   };
+  //api danh sách dịch vụ áp dụng
   const axiosListServiceApplication = async () => {
     let response = await listServiceApplicationController(header);
     if (response.data && response.status === 200) {
       setListServiceApplication(response.data);
     }
   };
-
+  //api danh sách hình thức
   const axiosListDiscountForm = async () => {
     let result = [];
     let response = await listDiscountFormController(header);
@@ -2087,28 +2145,28 @@ function CreateVoucher(props) {
       setListDiscountForm(result);
     }
   };
-
+  //api danh sách loại phí vận chuyển
   const axiosListDiscountType = async () => {
     let response = await listDiscountTypeController(header);
     if (response.data && response.status === 200) {
       setListDiscountType(response.data);
     }
   };
-
+  //api danh sách trạng thái đợt phát hành
   const axiosListVoucherStatus = async () => {
     let response = await listVoucherStatusController(header);
     if (response.data && response.status === 200) {
       setListVoucherStatus(response.data);
     }
   };
-
+  //api phương thức thanh toán
   const axiosListPayment = async () => {
     let response = await listPaymentController(header);
     if (response.data && response.status === 200) {
       setListPayment(response.data.paymentMethodList);
     }
   };
-
+  //api danh sách gói cước
   const axiosListPackage = async () => {
     let result1 = [];
     let response = await listPackageController(header);
@@ -2131,6 +2189,7 @@ function CreateVoucher(props) {
       setListPackage(result1);
     }
   };
+  //api loại mã
   const axiosListCodeType = async () => {
     let result = [];
     let response = await listCodeTypeController(header);
@@ -2141,9 +2200,10 @@ function CreateVoucher(props) {
       setListCodeType(result);
     }
   };
-  const axiosGetListPackageFromProvince = async (packageCode) => {
+  //api danh sách tỉnh thành
+  const axiosGetListProvinceCode = async () => {
     let result = [];
-    let response = await listFromProvinceController(packageCode, header);
+    let response = await getAllProvinceController(header);
     if (response.data && response.status === 200) {
       response.data.list.map((item) =>
         result.push({
@@ -2152,24 +2212,10 @@ function CreateVoucher(props) {
           code: item.code,
         })
       );
-      setListProvinceCodeFrom(result);
+      setListProvinceCode(result);
     }
   };
 
-  const axiosGetListPackageToProvince = async (packageCode) => {
-    let result = [];
-    let response = await listToProvinceController(packageCode, header);
-    if (response.data && response.status === 200) {
-      response.data.list.map((item) =>
-        result.push({
-          label: item.name,
-          value: item.id,
-          code: item.code,
-        })
-      );
-      setListProvinceCodeTo(result);
-    }
-  };
   //===================END CALL API ========================
 
   //======================== START VALIDATE DATA========================
@@ -2177,13 +2223,12 @@ function CreateVoucher(props) {
   const validateAll = () => {
     const msg = {};
     let voucherSerialId = id ? id : copyFromId ? copyFromId : "";
-    // let page = id ? "update" : copyFromId ? "copy" : "create";
     if (data.paymentMethod !== null && data.paymentMethod.length < 1) {
       msg.paymentMethod = "Vui lòng chọn hình thức thanh toán";
     }
-    if (pkStatus === "selectPackage") {
+    if (pkStatus == "selectPackage") {
       if (
-        data.packages.length === 0 ||
+        data.packages.length == 0 ||
         data.packages[0] == "ALL" ||
         data.packages == null
       ) {
@@ -2266,27 +2311,27 @@ function CreateVoucher(props) {
     }
     //validate case loại 1 mã nhiều người sử dụng
     if (data.ishared === 1) {
-      //Số lần sử dụng tối đa
+      //Số lần sử dụng tối đa của ĐPH
       if (
-        data.usage_limit === null ||
+        data.serialUsageLimit === null ||
         // data.usage_limit > data.userPhone.length ||
-        isNaN(data.usage_limit)
+        isNaN(data.serialUsageLimit)
       ) {
-        msg.usage_limit1 = "Không được bỏ trống!";
+        msg.serialUsageLimit = "Không được bỏ trống!";
       }
-      if (data.usage_limit > 10000) {
-        msg.usage_limit1 = "Không hợp lệ!";
+      if (data.serialUsageLimit > 10000) {
+        msg.serialUsageLimit = "Không hợp lệ!";
       }
-      //Số lượng tối đa cho 1 user
+      //Số lượng tối đa cho 1 voucher
       if (
-        data.personalUsageLimit === null ||
+        data.voucherUsageLimit === null ||
         // data.personalUsageLimit > data.userPhone.length ||
-        isNaN(data.personalUsageLimit)
+        isNaN(data.voucherUsageLimit)
       ) {
-        msg.personalUsageLimit1 = "Không được bỏ trống!";
+        msg.voucherUsageLimit1 = "Không được bỏ trống!";
       }
-      if (data.personalUsageLimit > 10000) {
-        msg.personalUsageLimit1 = "Không hợp lệ!";
+      if (data.voucherUsageLimit > 10000) {
+        msg.voucherUsageLimit1 = "Không hợp lệ!";
       }
       //Tự động sinh mã tối đa 4 ký tự
 
@@ -2311,22 +2356,22 @@ function CreateVoucher(props) {
     }
     //validate case loại mã yêu cầu nhập
     if (data.ishared === 2) {
-      //Số lần sử dụng tối đa
+      //Nhập số lượng voucher
       if (
-        data.usage_limit === null ||
-        data.usage_limit > 10000 ||
-        isNaN(data.usage_limit)
+        data.amountVoucher === null ||
+        data.amountVoucher > 10000 ||
+        isNaN(data.amountVoucher)
       ) {
-        msg.usage_limit2 = "Không hợp lệ!";
+        msg.amountVoucher = "Không hợp lệ!";
       }
       //Số lượng tối đa cho 1 user
       if (
-        data.personalUsageLimit === null ||
-        data.personalUsageLimit > 10000 ||
+        data.voucherUsageLimit === null ||
+        data.voucherUsageLimit > 10000 ||
         // data.personalUsageLimit > data.userPhone.length ||
-        isNaN(data.personalUsageLimit)
+        isNaN(data.voucherUsageLimit)
       ) {
-        msg.personalUsageLimit2 = "Không hợp lệ!";
+        msg.voucherUsageLimit2 = "Không hợp lệ!";
       }
       //Tự động sinh mã tối đa 4 ký tự
 
@@ -2371,9 +2416,12 @@ function CreateVoucher(props) {
     if (data.status === null) {
       msg.status = "Vui lòng chọn trạng thái";
     }
+    if (data.userTypeCodition == null) {
+      msg.userTypeCodition = "Vui lòng chọn trạng thái gói cước";
+    }
     //validate lý do từ chối duyệt
 
-    //nếu nó ở màn sửa và trạng thái đang chọn là từ chối duyệt thì validate
+    //validate nếu ở màn sửa và trạng thái đang chọn là từ chối duyệt
     if (
       (voucherSerialId = id && data.status === 2 && isEmpty(data.rejectReason))
     ) {
@@ -2381,7 +2429,7 @@ function CreateVoucher(props) {
     }
 
     setValidationMsg(msg);
-    console.log(msg);
+    // console.log(msg);
     if (Object.keys(msg).length > 0) return false;
     return true;
   };
@@ -2390,7 +2438,6 @@ function CreateVoucher(props) {
   //=========================CREATE/COPY===========================
   const onSubmitRelease = async () => {
     console.log("data create", data);
-    console.log(data.packages);
     let params = {
       ...data,
     };
@@ -2409,6 +2456,7 @@ function CreateVoucher(props) {
     );
     if (dataRespon.status === 200) {
       callNotify("success", "Tạo đợt phát hành thành công", 3000);
+      history.push("/listVoucherSerial");
     } else {
       callNotify("danger", dataRespon.message, 3000);
     }
@@ -2428,19 +2476,8 @@ function CreateVoucher(props) {
     const isValid = validateAll();
     if (!isValid) return;
 
-    if (params.status === 4) {
-      console.log("data test", JSON.stringify(dataRequestReleaseVoucherSerial));
-      //CalL API phát hành voucher
-      let dataResponse = await requestRelaseVoucherSerial(
-        JSON.stringify(dataRequestReleaseVoucherSerial),
-        header
-      );
-      console.log("data trả về", dataResponse);
-      if (dataResponse.status === 200) {
-        callNotify("info", dataResponse.message, 3000);
-      } else {
-        callNotify("danger", dataResponse.message, 3000);
-      }
+    if (params.status === STATUS_APPROVED) {
+      //CALL API EDIT
       let dataRespon = await editVoucherSerialController(
         JSON.stringify(params),
         header
@@ -2450,6 +2487,16 @@ function CreateVoucher(props) {
       } else {
         callNotify("danger", dataRespon.message, 3000);
       }
+      //CalL API phát hành voucher
+      let dataResponse = await requestRelaseVoucherSerial(
+        JSON.stringify(dataRequestReleaseVoucherSerial),
+        header
+      );
+      if (dataResponse.status === 200) {
+        callNotify("info", dataResponse.message, 3000);
+      } else {
+        callNotify("danger", dataResponse.message, 3000);
+      }
     } else {
       //Call API update
       let dataRespon = await editVoucherSerialController(
@@ -2458,6 +2505,7 @@ function CreateVoucher(props) {
       );
       if (dataRespon.status === 200) {
         callNotify("success", "Cập nhật đợt phát hành thành công", 3000);
+        history.push("/listVoucherSerial");
       } else {
         callNotify("danger", dataRespon.message, 3000);
       }
@@ -2468,19 +2516,47 @@ function CreateVoucher(props) {
   //======================START RENDER========================
 
   useEffect(() => {
-    axiosListServiceApplication();
-    axiosListDiscountForm();
-    axiosListDiscountType();
-    axiosListVoucherStatus();
-    axiosListPayment();
-    axiosListPackage();
-    axiosGetListPackageFromProvince();
-    axiosGetListPackageToProvince();
-    axiosListCodeType();
-    axiosListUser();
-    axiosListVoucherType();
-    axiosGetDetailVoucherSerial();
-  }, [id]);
+    if (role == "") {
+      axiosGetRoleUser();
+    }
+    if (
+      listServiceApplication.length == 0 &&
+      ((role != "" && page == "update") || page != "update")
+    ) {
+      axiosListServiceApplication();
+      axiosListDiscountForm();
+      axiosListDiscountType();
+      axiosListVoucherStatus();
+      axiosListPayment();
+      axiosListPackage();
+      axiosGetListProvinceCode();
+      axiosListCodeType();
+      axiosListUser();
+      axiosListVoucherType();
+      axiosGetDetailVoucherSerial();
+    }
+  }, [id, role]);
+  //upload ảnh
+  useEffect(() => {
+    if (selectedFile !== null) {
+      const formData = new FormData();
+      formData.append("file", selectedFile, selectedFile.name);
+      formData.append("username", "");
+      formData.append("file_type", "");
+      axios
+        .post(
+          "https://haloship.imediatech.com.vn/imedia/auth/media/upload_file",
+          formData
+        )
+        .then((response) => {
+          setData({ ...data, image: response.data.file_url });
+          setUrlImage(
+            "https://haloship.imediatech.com.vn/" + response.data.file_url
+          );
+        });
+    }
+  }, [selectedFile]);
+  //selected loại(voucher/coupon),hình thức,loại mã
   useEffect(() => {
     if (listVoucherType != null && data.voucherType != null) {
       setSelectedVoucherType(
@@ -2504,6 +2580,7 @@ function CreateVoucher(props) {
     selectedDiscountForm,
     selectedCodeType,
   ]);
+  //selected gói cước
   useEffect(() => {
     if (
       listPackage != null &&
@@ -2517,47 +2594,35 @@ function CreateVoucher(props) {
       );
     }
   }, [listPackage, data]);
+  //selected tỉnh thành theo khu vực giao
   useEffect(() => {
     if (
-      listProvinceCodeFrom != null &&
-      listProvinceCodeFrom.length > 0 &&
+      listProvinceCode != null &&
+      listProvinceCode.length > 0 &&
       data.provinceCodeTo != null
     ) {
       setIsSelectedListProvinceTo(
-        listProvinceCodeFrom.filter(
+        listProvinceCode.filter(
           (item) => data.provinceCodeTo.indexOf(item.code) > -1
         )
       );
     }
-  }, [listProvinceCodeFrom, data]);
-
+  }, [listProvinceCode, data]);
+  //selected tỉnh thành theo khu vực gửi
   useEffect(() => {
     if (
-      listProvinceCodeTo != null &&
-      listProvinceCodeTo.length > 0 &&
-      data.provinceCodeTo != null
-    ) {
-      setIsSelectedListProvinceTo(
-        listProvinceCodeTo.filter(
-          (item) => data.provinceCodeTo.indexOf(item.code) > -1
-        )
-      );
-    }
-  }, [listProvinceCodeTo, data]);
-  useEffect(() => {
-    if (
-      listProvinceCodeFrom != null &&
-      listProvinceCodeFrom.length > 0 &&
+      listProvinceCode != null &&
+      listProvinceCode.length > 0 &&
       data.provinceCodeFrom != null
     ) {
       setIsSelectedListProvinceFrom(
-        listProvinceCodeFrom.filter(
+        listProvinceCode.filter(
           (item) => data.provinceCodeFrom.indexOf(item.code) > -1
         )
       );
     }
-  }, [listProvinceCodeFrom, data]);
-
+  }, [listProvinceCode, data]);
+  //selected ngày bắt đầu và ngày kết thúc
   useEffect(() => {
     if (
       data.startAt != null &&
@@ -2576,6 +2641,7 @@ function CreateVoucher(props) {
       <div className="col-12 grid-margin stretch-card">
         <div className="card">
           <div className="card-body">
+            <h4 className="card-title">ROLE-{role}</h4>
             <h4 className="card-title">Thêm đợt phát hành E-voucher</h4>
             <p className="card-description font-weight-bold"> Thông tin </p>
             <form className="forms-sample">
@@ -2706,40 +2772,22 @@ function CreateVoucher(props) {
                       onChange={onFileChange}
                       disabled={disable.desc}
                     />
-                    <button onClick={onFileUpload} disabled={disable.desc}>
-                      Upload!
-                    </button>
                   </div>
                   {fileData()}
                 </div>
               </div>
-              <div className="row">
-                <div className="form-group col-md-5  pdr-menu edit-card-select">
-                  <label htmlFor="discountForm" className="font-weight-bold">
-                    Hình thức (*)
-                  </label>
-                  <Select
-                    name="discountForm"
-                    id="discountForm"
-                    styles={customStyles}
-                    options={listDiscountForm}
-                    placeholder="Hình thức"
-                    onChange={selectDiscountForm}
-                    value={selectedDiscountForm || listDiscountForm[0]}
-                    isDisabled={disable.discountForm}
-                  />
-                  <p className="text-danger">{validationMsg.discountForm}</p>
-                </div>
-              </div>
               <div className="row-fluid">
-                <label htmlFor="content font-weight-bold">
+                <label htmlFor="content " className="font-weight-bold">
                   Dịch vụ áp dụng (*)
                 </label>
                 <div className="col-md-12">
                   <Form.Group>
                     <div className="row">
                       {listServiceApplication.map((item) => (
-                        <div className="form-check form-check-primary col-md-4">
+                        <div
+                          className="form-check form-check-primary col-md-4"
+                          key={item.code}
+                        >
                           <label className="form-check-label">
                             <input
                               name="vouchcerServiceApplication"
@@ -2763,12 +2811,31 @@ function CreateVoucher(props) {
                   </Form.Group>
                 </div>
               </div>
+              <div className="row">
+                <div className="form-group col-md-5  pdr-menu edit-card-select">
+                  <label htmlFor="discountForm" className="font-weight-bold">
+                    Hình thức (*)
+                  </label>
+                  <Select
+                    name="discountForm"
+                    id="discountForm"
+                    styles={customStyles}
+                    options={listDiscountForm}
+                    placeholder="Hình thức"
+                    onChange={selectDiscountForm}
+                    value={selectedDiscountForm || listDiscountForm[2]}
+                    isDisabled={disable.discountForm}
+                  />
+                  <p className="text-danger">{validationMsg.discountForm}</p>
+                </div>
+              </div>
+
               <Form.Group className="row">
                 <label className="col-sm-12 col-form-label d-block font-weight-bold">
                   Dựa trên (*)
                 </label>
                 {listDiscountType.map((item) => (
-                  <div className="col-sm-4">
+                  <div className="col-sm-4" key={item.code}>
                     <div className="form-check">
                       <label className="form-check-label">
                         <input
@@ -2860,6 +2927,7 @@ function CreateVoucher(props) {
                   onChange={selectDate}
                   value={selectedDateValue}
                   disabled={disable.startAt}
+                  disabledDate={beforeToday()}
                 />
                 <p className="text-danger">{validationMsg.date}</p>
               </Form.Group>
@@ -2876,7 +2944,6 @@ function CreateVoucher(props) {
                       value="0"
                       id="typeArea_all"
                       checked={data.typeArea == 0 ? true : false}
-                      defaultChecked={true}
                       onChange={selectTypeArea}
                       onClick={onClickSetAllArea}
                       disabled={disable.typeArea}
@@ -2897,7 +2964,6 @@ function CreateVoucher(props) {
                       disabled={isSinglePackage || disable.typeArea}
                       checked={data.typeArea == 1 ? true : false}
                       onClick={onClickSetTypeAreaTo}
-                      // disabled={data.status === 4 ? true : false}
                     />
                     <i className="input-helper"></i>
                     Theo khu vực giao
@@ -2905,11 +2971,12 @@ function CreateVoucher(props) {
                   <div id="typeArePKTo" style={{ display: "none" }}>
                     <ReactMultiSelectCheckboxes
                       id="selectByArea1"
-                      options={listProvinceCodeFrom}
+                      options={listProvinceCode}
                       checked={data.typeArea == 2 ? true : false}
                       isDisabled={disablePkTo || disable.typeArea}
                       onChange={selectProvinceTo}
                       defaultValue={isSelectedListProvinceTo}
+                      placeholderButtonLabel="--Chọn tỉnh thành--"
                     />
                   </div>
 
@@ -2934,10 +3001,11 @@ function CreateVoucher(props) {
                   <div id="typeArePKFrom" style={{ display: "none" }}>
                     <ReactMultiSelectCheckboxes
                       id="selectByArea2"
-                      options={listProvinceCodeTo}
+                      options={listProvinceCode}
                       isDisabled={disablePkFrom || disable.typeArea}
                       onChange={selectProvinceFrom}
                       defaultValue={isSelectedListProvinceFrom}
+                      placeholderButtonLabel="--Chọn tỉnh thành--"
                     />
                   </div>
                   <p className="text-danger">{validationMsg.provinceCode2}</p>
@@ -2954,8 +3022,7 @@ function CreateVoucher(props) {
                       className="form-check-input"
                       name="optionsRadios"
                       id="noConditional"
-                      onClick={showListConditional}
-                      defaultChecked={true}
+                      checked={data.userTypeCodition === 0 ? true : false}
                       onChange={selectUserTypeCond}
                       value="0"
                       disabled={disable.userTypeCodition}
@@ -2965,22 +3032,19 @@ function CreateVoucher(props) {
                   </label>
                 </div>
                 <div className="form-check col-md-5">
-                  <label className="form-check-label">
-                    <input
-                      type="radio"
-                      className="form-check-input"
-                      name="optionsRadios"
-                      id="yesConditional"
-                      onClick={showListConditional}
-                      disabled={disable.userTypeCodition}
-                    />
-                    <i className="input-helper"></i>
+                  <label
+                    className="form-check-label"
+                    id="yesConditional"
+                    disabled={disable.userTypeCodition}
+                  >
                     Có điều kiện
                   </label>
+                  <p className="text-danger">
+                    {validationMsg.userTypeCodition}
+                  </p>
                   <ul
                     id="listConditional"
                     className="list-conditional"
-                    style={{ display: "none" }}
                     disabled={disable.userTypeCodition}
                   >
                     <li>
@@ -2993,6 +3057,8 @@ function CreateVoucher(props) {
                             id="optionsRadios1"
                             value="1"
                             onChange={selectUserTypeCond}
+                            disabled={disable.userTypeCodition}
+                            checked={data.userTypeCodition === 1 ? true : false}
                           />
                           <i className="input-helper"></i>
                           Chưa từng lên đơn của tất cả gói cước
@@ -3009,6 +3075,8 @@ function CreateVoucher(props) {
                             id="optionsRadios1"
                             value="2"
                             onChange={selectUserTypeCond}
+                            disabled={disable.userTypeCodition}
+                            checked={data.userTypeCodition === 2 ? true : false}
                           />
                           <i className="input-helper"></i>
                           Đã từng lên đơn của tất cả gói cước
@@ -3019,8 +3087,7 @@ function CreateVoucher(props) {
                 </div>
               </Form.Group>
               <div className="row">
-                <div className="form-group col-md-3 pdr-menu edit-card-select">
-                  <label htmlFor="exampleInputName1">{role}</label>
+                <div className="form-group col-md-4  edit-card-select">
                   <label
                     htmlFor="exampleInputName1"
                     className="font-weight-bold"
@@ -3054,7 +3121,10 @@ function CreateVoucher(props) {
                   </label>
                   <Form.Group className="row ml-2">
                     {listPayment.map((item) => (
-                      <div className="form-check form-check-primary col-md-4">
+                      <div
+                        className="form-check form-check-primary col-md-4"
+                        key={item.code}
+                      >
                         <label className="form-check-label">
                           <input
                             name="paymentMethod"
@@ -3062,7 +3132,7 @@ function CreateVoucher(props) {
                             type="checkbox"
                             className="form-check-input checkboxPayment"
                             value={item.code}
-                            onClick={selectedPaymentMethod}
+                            onChange={selectedPaymentMethod}
                             checked={
                               data.paymentMethod.indexOf(item.code + "") > -1
                             }
@@ -3084,10 +3154,11 @@ function CreateVoucher(props) {
                   Trạng thái (*)
                 </label>
                 {listVoucherStatus.map((item) => (
-                  <div className="col-sm-2">
+                  <div className="col-sm-2" key={item.code}>
                     <div className="form-check">
                       <label className="form-check-label">
                         <input
+                          style={{ display: "none" }}
                           type="radio"
                           className="form-check-input"
                           name="status"

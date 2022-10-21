@@ -1,4 +1,12 @@
 import axios from "../../../../axios";
+//API Check role user
+const getUserDetailController = (header) => {
+  return axios({
+    url: "/api/user-detail",
+    method: "get",
+    headers: header,
+  });
+};
 //API Phát hành voucher
 const requestRelaseVoucherSerial = (data, header) => {
   return axios({
@@ -38,6 +46,8 @@ const getListVoucherSerialController = (data, header) => {
       voucherStatus: data.voucherStatus,
       size: data.size,
       index: data.index,
+      fromCreateDate: data.fromCreateDate,
+      toCreateDate: data.toCreateDate,
     },
     headers: header,
   });
@@ -60,7 +70,14 @@ const createVoucherSerialController = (header, data) => {
     data: data,
   });
 };
-
+//danh sách tỉnh quận huyện
+const getAllProvinceController = (header) => {
+  return axios({
+    url: "/add-voucher-serial/get-all-province",
+    method: "get",
+    headers: header,
+  });
+};
 // Danh sách user
 const listUserController = (data, header) => {
   if (!data) {
@@ -185,4 +202,6 @@ export {
   getDetailVoucherSerialController,
   editVoucherSerialController,
   requestRelaseVoucherSerial,
+  getAllProvinceController,
+  getUserDetailController,
 };

@@ -5,9 +5,9 @@ import Spinner from "../app/shared/Spinner";
 const materialConversion = lazy(() =>
   import("./components/materialConversion/views/listConversion")
 );
-// const Authenticator = lazy(() =>
-//   import("./components/Authenticator/controllers/authenticator")
-// );
+const Authenticator = lazy(() =>
+  import("./components/Authenticator/controllers/authenticator")
+);
 const ListVoucherSerial = lazy(() =>
   import("./components/voucherSerial/views/ListVoucherSerial.jsx")
 );
@@ -32,8 +32,10 @@ class AppRoutes extends Component {
             path="/listVoucherSerial"
             component={ListVoucherSerial}
           />
+          <Route exact path="/Authenticator" component={Authenticator} />
           <Route path="/materialConversion" component={materialConversion} />
           <Route path="/createVoucherSerial" component={CreateVoucherSerial} />
+
           <Route path="/test" component={test} />
           <Route path="/listVouchers" component={listVouchers} />
           <Route path="/listVouchersUsed" component={listVouchersUsed} />
